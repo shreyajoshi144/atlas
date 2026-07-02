@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — A Living Research Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   ATLAS — DESIGN TOKENS
+   A mineral, low-noise dark palette: near-black with a green undertone,
+   oxidized jade as the single primary accent, brass as a quiet secondary.
+   Status colors (sage / amber / terracotta) are the only other color
+   allowed to appear — and only when they're reporting something.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0B0F0D;
+  --bg1:       #0E1310;
+  --bg2:       #121816;
+  --bg3:       #18211D;
+  --bg4:       #1E2A24;
+  --border:    rgba(234,240,236,0.07);
+  --border2:   rgba(234,240,236,0.14);
+  --ink:       #EAF0EC;
+  --ink2:      #9FB0A6;
+  --ink3:      #5C6D63;
+
+  --jade:        #6FA287;
+  --jade-dim:    rgba(111,162,135,0.12);
+  --jade-border: rgba(111,162,135,0.32);
+
+  --brass:        #C9A15A;
+  --brass-dim:    rgba(201,161,90,0.12);
+  --brass-border: rgba(201,161,90,0.3);
+
+  --stone: #8A968E;
+
+  --sage:        #93C08A;
+  --sage-dim:    rgba(147,192,138,0.12);
+  --sage-border: rgba(147,192,138,0.32);
+
+  --amber:        #D9A441;
+  --amber-dim:    rgba(217,164,65,0.12);
+  --amber-border: rgba(217,164,65,0.3);
+
+  --terracotta:        #C1614A;
+  --terracotta-dim:    rgba(193,97,74,0.12);
+  --terracotta-border: rgba(193,97,74,0.3);
+
+  --mono:  'IBM Plex Mono', monospace;
+  --serif: 'IBM Plex Serif', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+
+  --r: 14px; --r-sm: 9px; --r-lg: 20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--sans); font-size: 13.5px; min-height: 100dvh;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(111,162,135,0.05), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 100% 0%, rgba(201,161,90,0.03), transparent 60%);
+  background-attachment: fixed;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+a { color: inherit; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── Layout shell ─────────────────────────────────────────────────── */
+.app { display: grid; grid-template-columns: 250px 1fr 296px; grid-template-rows: 58px 1fr 28px; min-height: 100dvh; }
+.topbar { grid-column: 1 / -1; display: flex; align-items: center; padding: 0 18px; gap: 14px; border-bottom: 1px solid var(--border); background: var(--bg1); }
+.sidebar { grid-row: 2; border-right: 1px solid var(--border); background: var(--bg1); overflow-y: auto; display: flex; flex-direction: column; }
+.main { grid-row: 2; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
+.context { grid-row: 2; border-left: 1px solid var(--border); background: var(--bg1); overflow-y: auto; display: flex; flex-direction: column; }
+.statusbar { grid-column: 1 / -1; display: flex; align-items: center; padding: 0 18px; gap: 18px; border-top: 1px solid var(--border); background: var(--bg1); font-family: var(--mono); font-size: 10.5px; color: var(--ink3); }
+@media (max-width: 1180px) { .context { display: none; } .app { grid-template-columns: 250px 1fr; } }
+@media (max-width: 860px)  { .sidebar { display: none; } .app { grid-template-columns: 1fr; } }
+
+/* ── Topbar ───────────────────────────────────────────────────────── */
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--jade-dim); border: 1px solid var(--jade-border); display: grid; place-items: center; flex-shrink: 0; }
+.brand-mark svg { width: 15px; height: 15px; }
+.brand-name { font-family: var(--mono); font-weight: 700; font-size: 14px; letter-spacing: 0.03em; color: var(--ink); }
+.brand-sub { font-size: 10.5px; color: var(--ink3); margin-top: 1px; }
+.topbar-search { flex: 1; max-width: 460px; margin: 0 auto; display: flex; align-items: center; gap: 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; color: var(--ink3); }
+.topbar-search input { flex: 1; background: transparent; border: none; outline: none; color: var(--ink); font-size: 12.5px; }
+.topbar-search input::placeholder { color: var(--ink3); }
+.kbd { font-family: var(--mono); font-size: 10px; color: var(--ink3); border: 1px solid var(--border2); border-radius: 5px; padding: 1px 5px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 600; transition: all 0.15s; border: 1px solid transparent; white-space: nowrap; }
+.btn-primary { background: var(--jade-dim); border-color: var(--jade-border); color: var(--jade); }
+.btn-primary:hover { background: rgba(111,162,135,0.2); }
+.btn-ghost { border-color: var(--border); color: var(--ink2); background: var(--bg2); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--ink); background: var(--bg3); }
+.btn-danger { border-color: var(--terracotta-border); color: var(--terracotta); background: var(--terracotta-dim); }
+.btn-danger:hover { background: rgba(193,97,74,0.22); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 9px; border: 1px solid var(--border); background: var(--bg2); color: var(--ink3); }
+.btn-icon:hover { color: var(--ink); border-color: var(--border2); }
+.avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--brass-dim); border: 1px solid var(--brass-border); color: var(--brass); display: grid; place-items: center; font-family: var(--mono); font-size: 11px; font-weight: 700; }
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+.s-section { padding: 14px; border-bottom: 1px solid var(--border); }
+.s-title { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin: 4px 0 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: var(--r-sm); font-size: 13px; color: var(--ink2); margin-bottom: 1px; cursor: pointer; transition: all 0.12s; }
+.nav-item:hover { background: var(--bg2); color: var(--ink); }
+.nav-item.active { background: var(--jade-dim); color: var(--jade); font-weight: 600; }
+.nav-item .ni-icon { width: 16px; text-align: center; opacity: 0.85; flex-shrink: 0; }
+.nav-item .ni-sub { display: none; }
+.signal-row { display: flex; align-items: center; gap: 8px; padding: 5px 2px; font-size: 12px; color: var(--ink2); }
+.signal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.signal-row .sr-count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink3); background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; }
+.status-pill { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg2); color: var(--ink2); }
+.led { width: 6px; height: 6px; border-radius: 50%; background: var(--terracotta); transition: all 0.3s; }
+.led.on { background: var(--sage); box-shadow: 0 0 7px var(--sage); }
+.sidebar-footer { margin-top: auto; padding: 14px; font-size: 10.5px; color: var(--ink3); line-height: 1.5; font-family: var(--serif); font-style: italic; border-top: 1px solid var(--border); }
+
+/* ── Main / page chrome ───────────────────────────────────────────── */
+.page { padding: 22px 26px 40px; flex: 1; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+.crumbs .sep { opacity: 0.5; }
+.crumbs .cur { color: var(--jade); }
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 6px; }
+.page-title { font-family: var(--serif); font-size: 1.65rem; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+.page-desc { color: var(--ink2); font-size: 13px; margin-top: 6px; max-width: 620px; line-height: 1.55; }
+.hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 9px; border-radius: 7px; border: 1px solid currentColor; }
+.badge-jade { color: var(--jade); background: var(--jade-dim); }
+.badge-brass { color: var(--brass); background: var(--brass-dim); }
+.badge-sage { color: var(--sage); background: var(--sage-dim); }
+.badge-amber { color: var(--amber); background: var(--amber-dim); }
+.badge-terracotta { color: var(--terracotta); background: var(--terracotta-dim); }
+.badge-neutral { color: var(--ink3); background: var(--bg2); }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 12px; }
+.card-glow { background: var(--bg2); border: 1px solid var(--jade-border); border-radius: var(--r); padding: 18px 20px; margin-bottom: 14px; box-shadow: 0 0 0 1px rgba(111,162,135,0.05), 0 0 40px -20px rgba(111,162,135,0.25); }
+.card-hover { transition: border-color 0.15s, transform 0.15s; }
+.card-hover:hover { border-color: var(--jade-border); transform: translateY(-1px); cursor: pointer; }
+.field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+.field-value { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--ink); }
+
+.grid { display: grid; gap: 10px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1000px) { .grid-4, .grid-5, .grid-6 { grid-template-columns: repeat(3, 1fr); } }
+
+.stat-tile { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 12px; text-align: center; }
+.stat-value { font-family: var(--mono); font-size: 1.45rem; font-weight: 700; color: var(--jade); line-height: 1.1; }
+.stat-label { font-size: 10px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; font-family: var(--mono); }
+
+/* ── Form controls ────────────────────────────────────────────────── */
+label.f-label { display: block; font-size: 11.5px; color: var(--ink2); margin-bottom: 6px; font-weight: 500; }
+.input, textarea.input, select.input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 9px 12px; color: var(--ink); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color .15s;
+}
+.input:focus { border-color: var(--jade-border); }
+textarea.input { resize: vertical; font-family: var(--sans); }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); padding: 6px 0; }
+.check-row input { accent-color: var(--jade); width: 14px; height: 14px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { padding: 5px 11px; border-radius: 999px; background: var(--bg3); border: 1px solid var(--border); font-size: 11.5px; color: var(--ink3); cursor: pointer; transition: all 0.15s; }
+.chip:hover { border-color: var(--jade-border); color: var(--jade); background: var(--jade-dim); }
+
+/* ── Tabs ─────────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+.tab { padding: 9px 14px; font-size: 12.5px; color: var(--ink3); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; }
+.tab:hover { color: var(--ink2); }
+.tab.active { color: var(--jade); border-bottom-color: var(--jade); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp .25s ease; }
+
+/* ── Score bar ────────────────────────────────────────────────────── */
+.bar-track { background: var(--bg); border: 1px solid var(--border); border-radius: 999px; height: 6px; overflow: hidden; margin: 6px 0; }
+.bar-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.16,1,.3,1); }
+
+/* ── Empty state ──────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 44px 20px; background: var(--bg2); border: 1px dashed var(--border2); border-radius: var(--r); }
+.empty-icon { font-size: 1.7rem; margin-bottom: 10px; opacity: 0.8; }
+.empty-title { font-family: var(--serif); font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+.empty-sub { font-size: 12px; color: var(--ink3); max-width: 380px; margin: 0 auto; line-height: 1.5; }
+
+/* ── Artifact / evidence rows ─────────────────────────────────────── */
+.artifact { background: var(--bg2); border: 1px solid var(--border); border-left: 2px solid var(--border2); border-radius: 10px; padding: 13px 15px; margin-bottom: 9px; transition: border-color .15s; }
+.artifact:hover { border-color: var(--border2); }
+.artifact-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 6px; }
+.artifact-title { font-family: var(--serif); font-weight: 600; color: var(--ink); font-size: 14px; flex: 1; }
+.artifact-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; border: 1px solid; border-radius: 7px; padding: 2px 7px; white-space: nowrap; }
+.artifact-domain { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); margin-bottom: 7px; }
+.artifact-snippet { font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.6; margin: 0 0 9px; }
+.artifact-meta { display: flex; gap: 14px; align-items: center; font-family: var(--mono); font-size: 10.5px; color: var(--ink3); }
+.artifact-meta a { text-decoration: none; margin-left: auto; }
+.evidence-row { background: var(--bg2); border: 1px solid var(--border); border-left: 2px solid var(--border2); border-radius: 10px; padding: 11px 14px; margin-bottom: 7px; }
+
+/* ── Chat ─────────────────────────────────────────────────────────── */
+.bubble-user { background: var(--jade-dim); border: 1px solid var(--jade-border); border-radius: 13px; padding: 9px 13px; color: var(--ink); font-size: 13px; max-width: 78%; margin-left: auto; }
+.bubble-bot { background: var(--bg2); border: 1px solid var(--border); border-radius: 13px; padding: 9px 13px; color: var(--ink2); font-size: 13px; max-width: 78%; font-family: var(--serif); line-height: 1.55; }
+.bubble-label { font-family: var(--mono); font-size: 10px; color: var(--ink3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
+
+/* ── Report body ──────────────────────────────────────────────────── */
+.report-body { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 22px 26px; line-height: 1.8; font-family: var(--serif); color: var(--ink); font-size: 14px; }
+.report-body h1, .report-body h2, .report-body h3 { font-family: var(--serif); color: var(--ink); margin: 1.2em 0 0.5em; }
+.report-body h1:first-child, .report-body h2:first-child, .report-body h3:first-child { margin-top: 0; }
+.report-body p { margin: 0.6em 0; }
+.report-body ul, .report-body ol { padding-left: 1.3em; }
+.report-body li { margin: 0.3em 0; }
+.report-body a { color: var(--jade); }
+.report-body code { font-family: var(--mono); background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+.report-body strong { color: var(--ink); }
+
+/* ── Confidence ring ──────────────────────────────────────────────── */
+.ring-wrap { display: flex; align-items: center; gap: 14px; }
+.ring { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+.ring svg { transform: rotate(-90deg); }
+.ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 16px; font-weight: 700; }
+.ring-info .ri-l { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); }
+.ring-info .ri-s { font-size: 11px; color: var(--ink3); margin-top: 3px; line-height: 1.5; }
+
+/* ── Knowledge Landscape ──────────────────────────────────────────── */
+.landscape-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 6px; position: relative; overflow: hidden; }
+.landscape-wrap::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+  background-image: radial-gradient(circle, rgba(234,240,236,0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.landscape-svg { width: 100%; height: auto; display: block; position: relative; }
+.ls-node-circle { transition: r .2s; }
+.ls-node:hover .ls-node-circle { filter: brightness(1.25); }
+.ls-label { font-family: var(--mono); fill: var(--ink2); font-size: 9.5px; }
+.ls-label-dim { fill: var(--ink3); font-size: 8.5px; }
+.ls-edge { fill: none; stroke-linecap: round; }
+.ls-legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 10px 16px 4px; font-size: 10.5px; color: var(--ink3); }
+.ls-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ls-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+@keyframes nodeIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes glow { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.ls-pulse { animation: glow 1.8s ease-in-out infinite; }
+
+/* ── Route / pipeline ladder ──────────────────────────────────────── */
+.ladder { display: flex; flex-direction: column; gap: 2px; }
+.rung { display: flex; align-items: center; gap: 10px; padding: 8px 4px; font-family: var(--mono); font-size: 12px; color: var(--ink3); position: relative; }
+.rung:not(:last-child)::after { content: ''; position: absolute; left: 9px; top: 26px; width: 1px; height: 14px; background: var(--border2); }
+.rung.done { color: var(--ink2); }
+.rung.done::after { background: var(--sage); }
+.rung.active { color: var(--jade); font-weight: 600; }
+.rung-dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--ink3); flex-shrink: 0; }
+.rung.done .rung-dot { background: var(--sage); border-color: var(--sage); }
+.rung.active .rung-dot { border-color: var(--jade); background: var(--bg2); box-shadow: 0 0 0 3px var(--jade-dim); animation: glow 1.4s ease-in-out infinite; }
+.rung-time { margin-left: auto; font-size: 10px; color: var(--ink3); }
+
+/* ── Timeline ─────────────────────────────────────────────────────── */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before { content: ''; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 1px; background: var(--border2); }
+.t-item { position: relative; padding-bottom: 16px; }
+.t-item::before { content: ''; position: absolute; left: -18px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sage); border: 2px solid var(--bg1); }
+.t-time { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); }
+.t-label { font-size: 12px; color: var(--ink2); margin-top: 2px; }
+
+/* ── History rows ─────────────────────────────────────────────────── */
+.hist-row { display: flex; gap: 10px; align-items: stretch; margin-bottom: 9px; }
+.hist-row .card { flex: 1; margin-bottom: 0; }
+
+/* ── Table-ish rows for KB ────────────────────────────────────────── */
+.kb-row { display: flex; align-items: center; gap: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 13px; margin-bottom: 6px; }
+.kb-row .id { font-family: var(--mono); font-size: 12px; color: var(--jade); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Toast ────────────────────────────────────────────────────────── */
+#toastHost { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+.toast { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: fadeUp .2s ease; max-width: 320px; }
+.toast.err { border-color: var(--terracotta-border); color: var(--terracotta); }
+.toast.ok { border-color: var(--sage-border); color: var(--sage); }
+
+/* ── Misc ─────────────────────────────────────────────────────────── */
+.muted { color: var(--ink3); }
+.small { font-size: 11.5px; }
+.flex { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.gap-8 { gap: 8px; } .gap-10 { gap: 10px; } .gap-14 { gap: 14px; }
+.mt-8 { margin-top: 8px; } .mt-14 { margin-top: 14px; } .mt-18 { margin-top: 18px; }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border2); border-top-color: var(--jade); animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.skeleton { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 37%, var(--bg2) 63%); background-size: 400% 100%; animation: sk 1.4s ease infinite; border-radius: 8px; }
+@keyframes sk { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+</style>
+</head>
+<body>
+
+<div id="toastHost"></div>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6FA287" stroke-width="1.6"><path d="M12 2 L20 20 L12 16 L4 20 Z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">ATLAS</div>
+        <div class="brand-sub">Navigate Knowledge</div>
+      </div>
+    </div>
+    <div class="topbar-search">
+      <span>⌕</span>
+      <input id="globalSearch" placeholder="Search cases, topics, or ask Atlas…" />
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-primary" onclick="Atlas.nav('research')">＋ New Case</button>
+      <button class="btn-icon" title="Settings" onclick="Atlas.openSettings()">⚙</button>
+      <div class="avatar">A</div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="s-section">
+      <div class="s-title">Workspace</div>
+      <div class="nav-item" data-nav="home"><span class="ni-icon">⌂</span>Home</div>
+      <div class="nav-item" data-nav="research"><span class="ni-icon">✧</span>New Case</div>
+      <div class="nav-item" data-nav="chat"><span class="ni-icon">◈</span>Ask Atlas</div>
+    </div>
+    <div class="s-section">
+      <div class="s-title">History</div>
+      <div class="nav-item" data-nav="history"><span class="ni-icon">▤</span>Cases</div>
+      <div class="nav-item" data-nav="search"><span class="ni-icon">◍</span>Discover</div>
+    </div>
+    <div class="s-section">
+      <div class="s-title">Insights</div>
+      <div class="nav-item" data-nav="analytics"><span class="ni-icon">▥</span>Insights</div>
+      <div class="nav-item" data-nav="kb"><span class="ni-icon">▦</span>Knowledge Base</div>
+    </div>
+    <div class="s-section">
+      <div class="s-title">Knowledge Signals</div>
+      <div id="signalsBox">
+        <div class="signal-row"><span class="signal-dot" style="background:var(--ink3)"></span>Loading…</div>
+      </div>
+    </div>
+    <div class="s-section" style="border-bottom:none;">
+      <div class="s-title">System</div>
+      <div class="status-pill"><span class="led" id="statusLed"></span><span id="statusText">Checking…</span></div>
+    </div>
+    <div class="sidebar-footer">“Even when you're lost in information, Atlas finds your bearing.”</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="mainView"></main>
+
+  <!-- CONTEXT PANEL -->
+  <aside class="context" id="contextPanel"></aside>
+
+  <!-- STATUS BAR -->
+  <footer class="statusbar">
+    <span id="statusBarLeft">Atlas Core</span>
+    <span id="statusBarCase" class="muted"></span>
+    <span style="margin-left:auto" id="statusBarRight" class="muted">v1.0 · knowledge-navigation</span>
+  </footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   ATLAS — CONFIG & CORE UTILITIES
+   ══════════════════════════════════════════════════════════════════════ */
+const Atlas = {};
+
+Atlas.config = {
+  get apiBase() { return localStorage.getItem('atlas_api_base') || 'http://localhost:8000/api'; },
+  set apiBase(v) { localStorage.setItem('atlas_api_base', v); },
+};
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function fmtMs(ms) {
+  if (ms === null || ms === undefined) return '—';
+  return ms >= 1000 ? (ms / 1000).toFixed(1) + 's' : Math.round(ms) + 'ms';
+}
+function fmtPct(x) { return x === null || x === undefined ? '—' : Math.round(x * 100) + '%'; }
+function fmtNum(x) { return x === null || x === undefined ? '—' : Number(x).toLocaleString(); }
+function fmtDate(s) {
+  if (!s) return '—';
+  try { const d = new Date(s); return d.toLocaleDateString(undefined, {day:'2-digit', month:'short', year:'numeric'}); }
+  catch { return String(s).slice(0,10); }
+}
+function fmtTime(s) {
+  try { return new Date(s).toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'}); }
+  catch { return ''; }
+}
+
+// score/status → semantic color, same thresholds the backend implies (0.75 / 0.5)
+function scoreColor(score) {
+  if (score === null || score === undefined) return 'var(--ink3)';
+  if (score >= 0.75) return 'var(--sage)';
+  if (score >= 0.5) return 'var(--amber)';
+  return 'var(--terracotta)';
+}
+function scoreHex(score) {
+  if (score === null || score === undefined) return '#5C6D63';
+  if (score >= 0.75) return '#93C08A';
+  if (score >= 0.5) return '#D9A441';
+  return '#C1614A';
+}
+function confidenceLabel(score) {
+  if (score === null || score === undefined) return 'UNSCORED';
+  if (score >= 0.85) return 'HIGH CONFIDENCE';
+  if (score >= 0.6) return 'MODERATE CONFIDENCE';
+  if (score >= 0.4) return 'LOW CONFIDENCE';
+  return 'UNCONFIRMED';
+}
+function statusColor(status) {
+  const s = (status || '').toLowerCase();
+  if (s.includes('verified') && !s.includes('partial')) return 'var(--sage)';
+  if (s.includes('partial')) return 'var(--amber)';
+  return 'var(--terracotta)';
+}
+function verdictLabel(verdict) {
+  const v = (verdict || '').toLowerCase();
+  if (v.includes('verified') && !v.includes('partial')) return 'VERIFIED';
+  if (v.includes('partial')) return 'PARTIALLY VERIFIED';
+  return 'UNVERIFIED';
+}
+function badge(text, variant='neutral') {
+  return `<span class="badge badge-${variant}">${escapeHtml(text)}</span>`;
+}
+function emptyState(icon, title, sub='') {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${escapeHtml(title)}</div>${sub ? `<div class="empty-sub">${escapeHtml(sub)}</div>` : ''}</div>`;
+}
+function skeletonBlock(h='80px') {
+  return `<div class="skeleton" style="height:${h};border-radius:var(--r);margin-bottom:10px;"></div>`;
+}
+
+// tiny markdown → html (headers, bold, italic, lists, links, paragraphs) — no external deps
+function mdToHtml(md) {
+  if (!md) return '';
+  let src = escapeHtml(md);
+  src = src.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
+           .replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
+           .replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
+           .replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
+           .replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
+           .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
+  src = src.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+  src = src.replace(/`([^`]+)`/g, '<code>$1</code>');
+  src = src.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // lists
+  src = src.replace(/^(?:-|\*)\s+(.*)$/gm, '<li>$1</li>');
+  src = src.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+  // paragraphs: wrap remaining bare lines
+  src = src.split(/\n{2,}/).map(block => {
+    if (/^\s*<(h\d|ul|li)/.test(block)) return block;
+    if (!block.trim()) return '';
+    return `<p>${block.trim().replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
+  return src;
+}
+
+function toast(msg, variant='') {
+  const t = el(`<div class="toast ${variant}">${escapeHtml(msg)}</div>`);
+  $('#toastHost').appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3800);
+}
+
+/* ── HTTP client (mirrors the Python api_get/api_post/api_delete contract) ── */
+async function apiCall(method, path, body) {
+  const url = Atlas.config.apiBase + path;
+  const opts = { method, headers: {} };
+  if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  let res;
+  try {
+    res = await fetch(url, opts);
+  } catch (e) {
+    toast('Cannot reach Atlas backend. Is FastAPI running?', 'err');
+    throw e;
+  }
+  let json = null;
+  try { json = await res.json(); } catch { /* no body */ }
+  if (!res.ok) {
+    const detail = (json && (json.detail || json.error)) || res.statusText;
+    toast(`Error ${res.status}: ${detail}`, 'err');
+    throw new Error(detail);
+  }
+  return json;
+}
+const apiGet = (path, params) => {
+  const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([,v]) => v !== undefined && v !== null)).toString() : '';
+  return apiCall('GET', path + qs);
+};
+const apiPost = (path, body) => apiCall('POST', path, body);
+const apiDelete = (path) => apiCall('DELETE', path);
+
+async function checkHealth() {
+  const base = Atlas.config.apiBase.replace(/\/api\/?$/, '');
+  try {
+    const r = await fetch(base + '/health', { signal: AbortSignal.timeout(2500) });
+    setHealth(r.ok);
+  } catch { setHealth(false); }
+}
+function setHealth(online) {
+  $('#statusLed').classList.toggle('on', online);
+  $('#statusText').textContent = online ? 'System Online' : 'System Offline';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STATE + ROUTER
+   ══════════════════════════════════════════════════════════════════════ */
+Atlas.state = {
+  view: 'home',
+  activeCase: null,       // normalized case object currently shown
+  historyCache: null,
+  analyticsCache: null,
+  kbCache: null,
+  chatMessages: [],
+  chatHistoryApi: [],
+};
+
+const NAV_LABELS = {
+  home: ['Atlas', 'Home'], research: ['Atlas', 'Workspace', 'New Case'],
+  chat: ['Atlas', 'Workspace', 'Ask Atlas'], history: ['Atlas', 'History', 'Cases'],
+  search: ['Atlas', 'History', 'Discover'], analytics: ['Atlas', 'Insights', 'Insights'],
+  kb: ['Atlas', 'Insights', 'Knowledge Base'], case: ['Atlas', 'Cases', 'Living Case'],
+};
+
+Atlas.nav = function(view, opts) {
+  Atlas.state.view = view;
+  $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.nav === view));
+  render(opts);
+  $('.main').scrollTo?.(0,0);
+};
+
+function crumbsHtml(view) {
+  const parts = NAV_LABELS[view] || ['Atlas'];
+  return parts.map((p,i) => `${i>0?'<span class="sep">/</span>':''}<span class="${i===parts.length-1?'cur':''}">${escapeHtml(p)}</span>`).join('');
+}
+
+function render(opts) {
+  const v = Atlas.state.view;
+  const main = $('#mainView'), ctx = $('#contextPanel');
+  main.innerHTML = ''; ctx.innerHTML = '';
+  $('#statusBarCase').textContent = '';
+  const views = { home: viewHome, research: viewResearch, chat: viewChat, history: viewHistory, search: viewSearch, analytics: viewAnalytics, kb: viewKB, case: viewCase };
+  (views[v] || viewHome)(main, ctx, opts || {});
+}
+
+$$('.nav-item').forEach(n => n.addEventListener('click', () => Atlas.nav(n.dataset.nav)));
+
+Atlas.openSettings = function() {
+  const cur = Atlas.config.apiBase;
+  const next = prompt('Atlas API base URL (FastAPI backend):', cur);
+  if (next && next.trim()) { Atlas.config.apiBase = next.trim().replace(/\/$/, ''); toast('API base updated', 'ok'); checkHealth(); loadSignals(); }
+};
+
+$('#globalSearch').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.value.trim()) {
+    Atlas.nav('search', { prefillQuery: e.target.value.trim() });
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#globalSearch').focus(); }
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   NORMALIZATION — reconcile /research/run vs /history/report/{id} shapes
+   ══════════════════════════════════════════════════════════════════════ */
+function normalizeFromRun(data) {
+  const { session, report, top_sources, verification } = data;
+  return {
+    reportId: report?.report_id ?? session?.report_id ?? null,
+    topic: report?.topic ?? '',
+    summary: report?.summary ?? '',
+    reportMarkdown: report?.report_markdown ?? '',
+    keyStatistics: report?.key_statistics ?? [],
+    swot: report?.swot ?? null,
+    executiveBrief: report?.executive_brief ?? null,
+    verification: verification ?? null,
+    sources: top_sources ?? [],
+    createdAt: new Date().toISOString(),
+    totalExecutionMs: session?.total_execution_ms ?? null,
+    totalTokens: session?.total_tokens ?? null,
+    estimatedCost: session?.estimated_cost_usd ?? 0,
+    live: true,
+  };
+}
+function normalizeFromHistory(detail, reportId) {
+  const report = detail.report, sources = detail.sources || [];
+  return {
+    reportId: reportId,
+    topic: report?.topic ?? '',
+    summary: report?.summary ?? '',
+    reportMarkdown: report?.report_markdown ?? '',
+    keyStatistics: report?.key_statistics ?? [],
+    swot: report?.swot ?? null,
+    executiveBrief: report?.executive_brief ?? null,
+    verification: report?.verification ?? null,
+    sources: sources,
+    createdAt: report?.created_at ?? null,
+    totalExecutionMs: null, totalTokens: null, estimatedCost: null,
+    live: false,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: HOME
+   ══════════════════════════════════════════════════════════════════════ */
+async function viewHome(main, ctx) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('home')}</div>
+      <div style="max-width:640px;">
+        <div class="badge badge-jade" style="margin-bottom:16px;">⌗ Atlas Research Intelligence</div>
+        <div class="page-title" style="font-size:2.1rem;line-height:1.25;">Every investigation becomes a living case.<br>Every claim finds its place on the map.</div>
+        <p class="page-desc" style="margin-top:14px;font-size:13.5px;">
+          Atlas doesn't answer questions — it helps you navigate them. Sources become evidence,
+          claims become verified routes, and every case leaves a knowledge landscape you can revisit,
+          question, and build on.
+        </p>
+        <div class="flex gap-10 mt-18">
+          <button class="btn btn-primary" onclick="Atlas.nav('research')">＋ Open a New Case</button>
+          <button class="btn btn-ghost" onclick="Atlas.nav('history')">▤ View Past Cases</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="field-label" style="margin-bottom:10px;">HOW A CASE IS BUILT</div>
+      <div class="grid grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="ladder">
+            ${['Case Opened','Retrieving Sources','Ranking Evidence','Extracting Claims','Cross Verification','Confidence Analysis','Report Assembly','Memory Indexed']
+              .map(s => `<div class="rung done"><span class="rung-dot"></span>${s}</div>`).join('')}
+          </div>
+        </div>
+        <div class="grid" style="gap:8px;">
+          ${[
+            ['Retrieving Sources','Search plus async scraping pull raw material into the case file.'],
+            ['Ranking Evidence','Sources are scored on relevance and credibility before anything is trusted.'],
+            ['Cross Verification','Every claim is checked against its supporting artifacts before the report is written.'],
+            ['Memory Indexed','Chunked report embeddings are stored so this case can be recalled and questioned later.'],
+          ].map(([t,d]) => `<div class="card" style="margin-bottom:0;border-left:2px solid var(--jade-border);">
+            <div class="field-label" style="color:var(--jade);">${t}</div>
+            <div style="font-family:var(--serif);font-size:12.5px;color:var(--ink2);line-height:1.55;">${d}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div id="recentCasesBox">${skeletonBlock('90px')}${skeletonBlock('90px')}</div>
+    </div>
+  `;
+  ctx.innerHTML = `
+    <div class="s-section"><div class="s-title">Stack</div>
+      <div class="grid" style="gap:8px;">
+        ${[['LangGraph','Workflow Engine'],['ChromaDB','Semantic Memory'],['Tavily','Source Retrieval'],['FastAPI','Backend']]
+          .map(([v,l]) => `<div class="stat-tile" style="text-align:left;padding:10px 12px;"><div style="font-family:var(--mono);font-size:0.95rem;font-weight:700;color:var(--jade);">${v}</div><div class="stat-label" style="margin-top:2px;">${l}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  try {
+    const data = await apiGet('/history/reports', { limit: 3, offset: 0 });
+    const reports = data?.data?.reports || [];
+    const box = $('#recentCasesBox');
+    if (!reports.length) {
+      box.innerHTML = emptyState('🔭', 'No cases yet', 'Open your first case and it will be filed here.');
+      return;
+    }
+    box.innerHTML = `<div class="field-label" style="margin-bottom:10px;">RECENT CASES</div>` +
+      reports.map(r => recentCaseCard(r)).join('');
+  } catch { $('#recentCasesBox').innerHTML = emptyState('⚠', 'Could not load recent cases', 'Check that the backend is reachable.'); }
+}
+function recentCaseCard(r) {
+  const c = scoreColor(r.verification_score || 0);
+  return `<div class="card card-hover" style="border-left:3px solid ${c};" onclick="openHistoryCase('${r.report_id}')">
+    <div class="flex between">
+      <div style="font-family:var(--serif);font-weight:600;color:var(--ink);">${escapeHtml(r.topic)}</div>
+      <div style="font-family:var(--mono);font-size:12px;color:${c};font-weight:700;">${fmtPct(r.verification_score)}</div>
+    </div>
+    <div class="small muted mt-8">${escapeHtml((r.summary||'').slice(0,140))}${(r.summary||'').length>140?'…':''}</div>
+    <div class="flex gap-14 mt-8 small muted" style="font-family:var(--mono);">
+      <span>🗓 ${fmtDate(r.created_at)}</span><span>${verdictLabel(r.verification_verdict)}</span>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: RESEARCH (New Case)
+   ══════════════════════════════════════════════════════════════════════ */
+const EXAMPLE_TOPICS = [
+  'Impact of large language models on scientific research',
+  'State of solid-state battery commercialization',
+  'Regulatory landscape for AI in healthcare',
+];
+
+function viewResearch(main, ctx) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('research')}</div>
+      <div class="page-title">Open a Case</div>
+      <div class="page-desc">Enter a topic — Atlas retrieves, ranks, verifies, and charts the route.</div>
+      <div class="hr"></div>
+
+      <div class="card-glow">
+        <label class="f-label">Case topic</label>
+        <input class="input" id="rTopic" placeholder="e.g. Impact of large language models on scientific research" style="font-family:var(--sans);" />
+        <div class="chip-row">
+          ${EXAMPLE_TOPICS.map(t => `<span class="chip" onclick="document.getElementById('rTopic').value=${JSON.stringify(t)}">↳ ${escapeHtml(t.slice(0,40))}${t.length>40?'…':''}</span>`).join('')}
+        </div>
+
+        <details class="mt-18" id="rParams">
+          <summary class="small" style="cursor:pointer;color:var(--ink2);">⚙ Case parameters</summary>
+          <div class="grid grid-2 mt-14">
+            <div>
+              <label class="f-label">Investigation depth</label>
+              <select class="input" id="rMode">
+                <option value="5">Quick (5 sources)</option>
+                <option value="10">Deep (10 sources)</option>
+                <option value="5">Executive Brief</option>
+              </select>
+              <label class="check-row"><input type="checkbox" id="rVerify" checked>Include verification</label>
+            </div>
+            <div>
+              <label class="check-row"><input type="checkbox" id="rBrief" checked>Include executive brief</label>
+              <label class="check-row"><input type="checkbox" id="rMemory" checked>File to memory</label>
+            </div>
+          </div>
+          <label class="f-label mt-8">Additional context (optional)</label>
+          <textarea class="input" id="rContext" rows="2" placeholder="Any specific angle, audience, or constraints..."></textarea>
+        </details>
+
+        <button class="btn btn-primary mt-18" id="rRunBtn" onclick="runResearch()">⌗ Open Case</button>
+      </div>
+
+      <div id="rResultBox"></div>
+    </div>
+  `;
+  ctx.innerHTML = `<div class="s-section"><div class="s-title">Guidance</div>
+    <div class="small muted" style="line-height:1.6;">Be specific with your topic — Atlas ranks sources by relevance and credibility before anything is treated as evidence. Verification cross-checks every claim against its cited artifacts.</div>
+  </div>`;
+}
+
+async function runResearch() {
+  const topic = $('#rTopic').value.trim();
+  if (!topic) { toast('Enter a topic to open a case.', 'err'); return; }
+  const btn = $('#rRunBtn'); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Working…`;
+
+  const payload = {
+    topic,
+    user_context: $('#rContext').value.trim() || null,
+    include_verification: $('#rVerify').checked,
+    include_executive_brief: $('#rBrief').checked,
+    persist_memory: $('#rMemory').checked,
+    top_k_urls: parseInt($('#rMode').value, 10),
+  };
+
+  const box = $('#rResultBox');
+  const steps = ['Case Created','Retrieving Sources','Ranking Evidence','Extracting Claims','Cross Verification','Confidence Analysis','Report Assembly','Memory Indexed'];
+  box.innerHTML = `<div class="card mt-18"><div class="field-label" style="margin-bottom:10px;">ROUTE PROGRESS</div><div class="ladder" id="rLadder"></div></div>`;
+  let simIdx = 0;
+  const renderLadder = (activeIdx) => {
+    $('#rLadder').innerHTML = steps.map((s,i) => {
+      const cls = i < activeIdx ? 'done' : i === activeIdx ? 'active' : '';
+      return `<div class="rung ${cls}"><span class="rung-dot"></span>${s}</div>`;
+    }).join('');
+  };
+  renderLadder(0);
+  const ticker = setInterval(() => { simIdx = Math.min(simIdx + 1, steps.length - 2); renderLadder(simIdx); }, 900);
+
+  try {
+    const result = await apiPost('/research/run', payload);
+    clearInterval(ticker);
+    if (!result || !result.success) {
+      box.innerHTML = `<div class="card mt-18">${emptyState('⚠', 'Case could not be opened', 'Check the backend logs for details.')}</div>`;
+      return;
+    }
+    renderLadder(steps.length);
+    const normalized = normalizeFromRun(result.data);
+    Atlas.state.activeCase = normalized;
+    setTimeout(() => Atlas.nav('case', { fromResearch: true }), 450);
+  } catch {
+    clearInterval(ticker);
+    box.innerHTML = `<div class="card mt-18">${emptyState('⚠', 'Case could not be opened', 'Check that the backend is reachable.')}</div>`;
+  } finally {
+    btn.disabled = false; btn.innerHTML = '⌗ Open Case';
+  }
+}
+
+async function openHistoryCase(reportId) {
+  Atlas.nav('history'); // shows list w/ spinner context, then swap
+  try {
+    const detail = await apiGet(`/history/report/${reportId}`);
+    if (!detail || !detail.success) { toast('Failed to load case detail.', 'err'); return; }
+    Atlas.state.activeCase = normalizeFromHistory(detail.data, reportId);
+    Atlas.nav('case', { readonly: true });
+  } catch { /* toast already shown by apiCall */ }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: CASE (the signature Living Case view)
+   ══════════════════════════════════════════════════════════════════════ */
+function viewCase(main, ctx, opts) {
+  const c = Atlas.state.activeCase;
+  if (!c) { viewHome(main, ctx); return; }
+  $('#statusBarCase').textContent = `Case: ${c.topic.slice(0,48)}${c.topic.length>48?'…':''}`;
+
+  const vScore = c.verification?.overall_verification_score ?? null;
+  const strength = vScore === null ? '—' : vScore >= 0.75 ? 'Strong' : vScore >= 0.5 ? 'Moderate' : 'Weak';
+  const readonly = !!opts.readonly;
+
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('case')}</div>
+      <div class="page-head">
+        <div>
+          <div class="page-title">${escapeHtml(c.topic)} ${badge(readonly ? 'Filed Case' : 'Living Case', readonly ? 'brass' : 'sage')}</div>
+          <div class="page-desc">${escapeHtml(c.summary || 'Case filed and ready for review.')}</div>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost" onclick="downloadCaseMd()">⇩ Export</button>
+          <button class="btn btn-ghost" onclick="copyCaseLink()">↗ Share</button>
+        </div>
+      </div>
+
+      <div class="grid grid-5 mt-18" style="margin-bottom:6px;">
+        <div class="stat-tile"><div class="stat-value">${c.sources.length}</div><div class="stat-label">Sources</div></div>
+        <div class="stat-tile"><div class="stat-value" style="color:${scoreColor(vScore)}">${fmtPct(vScore)}</div><div class="stat-label">Verification</div></div>
+        <div class="stat-tile"><div class="stat-value">${strength}</div><div class="stat-label">Strength</div></div>
+        <div class="stat-tile"><div class="stat-value">${fmtMs(c.totalExecutionMs)}</div><div class="stat-label">Total Time</div></div>
+        <div class="stat-tile"><div class="stat-value">${fmtNum(c.totalTokens)}</div><div class="stat-label">Tokens</div></div>
+      </div>
+
+      <div class="tabs mt-18">
+        <div class="tab active" data-tab="route">◎ Route</div>
+        <div class="tab" data-tab="evidence">▤ Evidence Trail</div>
+        <div class="tab" data-tab="claims">✓ Claims</div>
+        <div class="tab" data-tab="verify">✦ Verification</div>
+        <div class="tab" data-tab="notes">✎ Notes</div>
+      </div>
+
+      <div class="tab-panel active" id="tab-route">
+        <div class="landscape-wrap"><div id="landscapeMount"></div></div>
+        <div class="ls-legend">
+          <span><i style="background:var(--sage)"></i>Strong evidence / verified</span>
+          <span><i style="background:var(--amber)"></i>Moderate / partial</span>
+          <span><i style="background:var(--terracotta)"></i>Weak / unverified</span>
+          <span><i style="background:var(--brass)"></i>Nearby case</span>
+        </div>
+        <div class="card mt-14">
+          <div class="field-label" style="margin-bottom:10px;">ROUTE PROGRESS</div>
+          <div class="ladder">
+            ${['Case Created','Retrieving Sources','Ranking Evidence','Extracting Claims','Cross Verification','Confidence Analysis','Report Assembly','Memory Indexed']
+              .map(s => `<div class="rung done"><span class="rung-dot"></span>${s}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-evidence">
+        ${c.sources.length ? c.sources.map(artifactCard).join('') : emptyState('🔗', 'No artifacts', 'This case has no source artifacts on file.')}
+      </div>
+
+      <div class="tab-panel" id="tab-claims">
+        ${(c.verification?.claims || []).length ? c.verification.claims.map(claimRow).join('') : emptyState('✓', 'No claims extracted', '')}
+      </div>
+
+      <div class="tab-panel" id="tab-verify">
+        ${verificationPanel(c.verification)}
+      </div>
+
+      <div class="tab-panel" id="tab-notes">
+        ${notesPanel(c)}
+      </div>
+    </div>
+  `;
+
+  $$('.tab').forEach(t => t.addEventListener('click', () => {
+    $$('.tab').forEach(x => x.classList.remove('active'));
+    $$('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    $('#tab-' + t.dataset.tab).classList.add('active');
+  }));
+
+  renderCaseHealth(ctx, c);
+  renderLandscape($('#landscapeMount'), c);
+}
+
+function artifactCard(s) {
+  const c = scoreColor(s.final_score);
+  return `<div class="artifact">
+    <div class="artifact-top">
+      <div class="artifact-title">${escapeHtml(s.title || 'Untitled source')}</div>
+      ${s.rank_position ? `<span class="artifact-tag" style="color:${c};border-color:${c};">ARTIFACT #${String(s.rank_position).padStart(2,'0')}</span>` : ''}
+    </div>
+    <div class="artifact-domain">${escapeHtml(s.domain || '')}</div>
+    <p class="artifact-snippet">${escapeHtml((s.snippet||'').slice(0,220))}</p>
+    <div class="artifact-meta">
+      <span>RELEVANCE <b style="color:var(--ink)">${s.relevance_score!=null?s.relevance_score.toFixed(2):'—'}</b></span>
+      <span>CREDIBILITY <b style="color:var(--ink)">${s.credibility_score!=null?s.credibility_score.toFixed(2):'—'}</b></span>
+      <a href="${s.url}" target="_blank" rel="noopener" style="color:${c};">VIEW SOURCE ↗</a>
+    </div>
+  </div>`;
+}
+function claimRow(claim) {
+  const c = statusColor(claim.status);
+  return `<div class="evidence-row" style="border-left-color:${c};">
+    <div style="font-family:var(--serif);font-size:13px;color:var(--ink);margin-bottom:5px;">${escapeHtml(claim.claim_text)}</div>
+    <div class="flex gap-14" style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.04em;">
+      <span style="color:${c};">${escapeHtml(claim.status||'')}</span>
+      <span>Confidence <b style="color:${c};">${fmtPct(claim.confidence)}</b></span>
+    </div>
+  </div>`;
+}
+function verificationPanel(v) {
+  if (!v) return emptyState('✦', 'Verification not requested', 'This case was filed without a verification pass.');
+  const score = v.overall_verification_score;
+  const c = scoreColor(score);
+  const circumference = 2 * Math.PI * 36;
+  const offset = circumference - (score || 0) * circumference;
+  return `<div class="grid grid-2" style="align-items:start;">
+    <div class="card" style="text-align:center;padding:26px;">
+      <div class="ring-wrap" style="justify-content:center;">
+        <div class="ring">
+          <svg width="84" height="84" viewBox="0 0 84 84">
+            <circle cx="42" cy="42" r="36" fill="none" stroke="var(--border)" stroke-width="5"/>
+            <circle cx="42" cy="42" r="36" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"
+              stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);"/>
+          </svg>
+          <div class="ring-num" style="color:${c};">${fmtPct(score)}</div>
+        </div>
+      </div>
+      <div class="badge mt-14" style="color:${c};border-color:${c};background:transparent;">${verdictLabel(v.verdict)}</div>
+      <div class="bar-track mt-14"><div class="bar-fill" style="width:${(score||0)*100}%;background:${c};"></div></div>
+      <div class="small muted mt-8">${escapeHtml(confidenceLabel(score))}</div>
+    </div>
+    <div>
+      <div class="field-label" style="margin-bottom:8px;">${(v.claims||[]).length} EVIDENCE ROWS</div>
+      ${(v.claims||[]).map(claimRow).join('') || emptyState('✓','No claims','')}
+    </div>
+  </div>`;
+}
+function notesPanel(c) {
+  const brief = c.executiveBrief;
+  let html = '';
+  if (c.reportMarkdown) {
+    html += `<div class="field-label" style="margin-bottom:10px;">CASE FILE</div><div class="report-body">${mdToHtmlSafe(c.reportMarkdown)}</div><div class="hr"></div>`;
+  }
+  if (c.keyStatistics?.length) {
+    html += `<div class="field-label" style="margin:14px 0 8px;">KEY STATISTICS</div>` +
+      c.keyStatistics.map(s => `<div class="small" style="display:flex;gap:8px;margin:5px 0;color:var(--ink2);"><span style="color:var(--jade);">▸</span>${escapeHtml(s)}</div>`).join('');
+  }
+  if (c.swot) {
+    html += `<div class="field-label" style="margin:16px 0 8px;">SWOT ANALYSIS</div><div class="grid grid-2">`;
+    const groups = [['strengths','Strengths','var(--sage)'],['weaknesses','Weaknesses','var(--terracotta)'],['opportunities','Opportunities','var(--jade)'],['threats','Threats','var(--amber)']];
+    html += groups.map(([k,label,col]) => (c.swot[k]||[]).length ? `<div class="card" style="border-top:2px solid ${col};margin-bottom:0;">
+        <b class="small" style="color:var(--ink);">${label}</b>
+        ${(c.swot[k]).map(x => `<div class="small muted mt-8">- ${escapeHtml(x)}</div>`).join('')}
+      </div>` : '').join('');
+    html += `</div>`;
+  }
+  if (brief) {
+    html += `<div class="hr"></div><div class="field-label" style="margin-bottom:8px;">EXECUTIVE SUMMARY</div>
+      <div class="card" style="border-left:3px solid var(--jade);"><p style="font-family:var(--serif);color:var(--ink2);line-height:1.7;font-size:13px;margin:0;">${escapeHtml(brief.executive_summary||'')}</p></div>
+      <div class="grid grid-2 mt-14">
+        <div>
+          ${brief.key_insights?.length ? `<div class="field-label" style="margin-bottom:8px;">KEY INSIGHTS</div>` + brief.key_insights.map(i => `<div class="small" style="display:flex;gap:6px;margin:5px 0;color:var(--ink2);"><span style="color:var(--jade);">◈</span>${escapeHtml(i)}</div>`).join('') : ''}
+          ${brief.risks?.length ? `<div class="field-label mt-14" style="margin-bottom:8px;">RISKS</div>` + brief.risks.map(i => `<div class="small" style="display:flex;gap:6px;margin:5px 0;color:var(--ink2);"><span style="color:var(--terracotta);">⚠</span>${escapeHtml(i)}</div>`).join('') : ''}
+        </div>
+        <div>
+          ${brief.opportunities?.length ? `<div class="field-label" style="margin-bottom:8px;">OPPORTUNITIES</div>` + brief.opportunities.map(i => `<div class="small" style="display:flex;gap:6px;margin:5px 0;color:var(--ink2);"><span style="color:var(--sage);">✦</span>${escapeHtml(i)}</div>`).join('') : ''}
+          ${brief.recommended_actions?.length ? `<div class="field-label mt-14" style="margin-bottom:8px;">RECOMMENDED ACTIONS</div>` + brief.recommended_actions.map(i => `<div class="small" style="display:flex;gap:6px;margin:5px 0;color:var(--ink2);"><span style="color:var(--amber);">→</span>${escapeHtml(i)}</div>`).join('') : ''}
+        </div>
+      </div>`;
+  }
+  return html || emptyState('✎', 'No notes on file', 'This case has no executive brief.');
+}
+function mdToHtmlSafe(md) { return mdToHtml(md); }
+
+function renderCaseHealth(ctx, c) {
+  const vScore = c.verification?.overall_verification_score ?? null;
+  const col = scoreColor(vScore);
+  const label = vScore === null ? 'Unscored' : vScore >= 0.75 ? 'Strong Bearing' : vScore >= 0.5 ? 'Holding Course' : 'Needs Attention';
+  const sub = vScore === null ? 'Verification was not requested for this case.' :
+    vScore >= 0.75 ? 'This case is well supported by high quality evidence.' :
+    vScore >= 0.5 ? 'This case has mixed support — review flagged claims.' :
+    'This case has weak evidentiary support. Treat conclusions with care.';
+  const circumference = 2 * Math.PI * 30;
+  const offset = circumference - (vScore || 0) * circumference;
+
+  const topSources = [...c.sources].sort((a,b) => (b.final_score||0)-(a.final_score||0)).slice(0,5);
+
+  ctx.innerHTML = `
+    <div class="s-section">
+      <div class="s-title">Case Health</div>
+      <div class="ring-wrap">
+        <div class="ring" style="width:68px;height:68px;">
+          <svg width="68" height="68" viewBox="0 0 68 68">
+            <circle cx="34" cy="34" r="30" fill="none" stroke="var(--border)" stroke-width="4"/>
+            <circle cx="34" cy="34" r="30" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);"/>
+          </svg>
+          <div class="ring-num" style="font-size:13px;color:${col};">${fmtPct(vScore)}</div>
+        </div>
+        <div class="ring-info">
+          <div class="ri-l">${label}</div>
+          <div class="ri-s">${sub}</div>
+        </div>
+      </div>
+    </div>
+    <div class="s-section">
+      <div class="s-title">Key Landmarks</div>
+      ${topSources.length ? topSources.map(s => `
+        <div class="flex between" style="padding:6px 0;border-bottom:1px solid var(--border);">
+          <div style="min-width:0;">
+            <div class="small" style="color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">${escapeHtml(s.title||s.domain||'Source')}</div>
+            <div class="small muted" style="font-family:var(--mono);font-size:10px;">${escapeHtml(s.domain||'')}</div>
+          </div>
+          <span class="badge" style="color:${scoreColor(s.final_score)};background:transparent;border-color:${scoreColor(s.final_score)};flex-shrink:0;">${s.final_score!=null?s.final_score.toFixed(2):'—'}</span>
+        </div>`).join('') : `<div class="small muted">No landmarks yet.</div>`}
+    </div>
+    <div class="s-section">
+      <div class="s-title">Journey Timeline</div>
+      <div class="timeline" id="journeyTimeline">
+        ${journeyTimelineItems(c).map(([t,l]) => `<div class="t-item"><div class="t-time">${t}</div><div class="t-label">${l}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="s-section" style="border-bottom:none;">
+      <div class="s-title">Case Meta</div>
+      <div class="small muted" style="font-family:var(--mono);line-height:2;">
+        ID: ${c.reportId ?? '—'}<br>
+        Filed: ${c.createdAt ? fmtDate(c.createdAt) + ' · ' + fmtTime(c.createdAt) : '—'}<br>
+        Est. cost: ${c.estimatedCost != null ? '$' + Number(c.estimatedCost).toFixed(4) : '—'}
+      </div>
+    </div>
+  `;
+}
+function journeyTimelineItems(c) {
+  const now = new Date();
+  const mk = (offsetMin) => { const d = new Date(now.getTime() - offsetMin*60000); return fmtTime(d); };
+  return [
+    [mk(0), 'Memory indexed'],
+    [mk(1), 'Report assembled'],
+    [mk(2), 'Confidence analyzed'],
+    [mk(3), 'Cross verification complete'],
+    [mk(5), 'Claims extracted'],
+    [mk(7), 'Sources ranked'],
+    [mk(9), 'Sources retrieved'],
+  ];
+}
+
+function downloadCaseMd() {
+  const c = Atlas.state.activeCase;
+  if (!c || !c.reportMarkdown) { toast('No case file to export.', 'err'); return; }
+  const blob = new Blob([c.reportMarkdown], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `atlas_case_${(c.reportId||'file')}.md`;
+  a.click();
+}
+function copyCaseLink() {
+  const c = Atlas.state.activeCase;
+  navigator.clipboard?.writeText(`${c?.topic || ''} — Atlas case ${c?.reportId || ''}`).then(
+    () => toast('Case reference copied to clipboard.', 'ok'),
+    () => toast('Could not copy to clipboard.', 'err')
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE KNOWLEDGE LANDSCAPE — signature interactive graph
+   Root (topic) at center · evidence arcs above · claims arc below ·
+   nearby cases fade in at the perimeter once semantic search resolves.
+   ══════════════════════════════════════════════════════════════════════ */
+function renderLandscape(mount, c) {
+  const W = 760, H = 380, cx = W/2, cy = H/2;
+  const sources = c.sources.slice(0, 8);
+  const claims = (c.verification?.claims || []).slice(0, 8);
+
+  const arcPoints = (n, radius, angleStart, angleEnd, ycenter) => {
+    if (n === 0) return [];
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const t = n === 1 ? 0.5 : i / (n - 1);
+      const a = (angleStart + (angleEnd - angleStart) * t) * Math.PI / 180;
+      pts.push({ x: cx + radius * Math.cos(a), y: ycenter + radius * Math.sin(a) * 0.62 });
+    }
+    return pts;
+  };
+
+  const srcPts = arcPoints(sources.length, 168, 200, 340, cy - 70);
+  const claimPts = arcPoints(claims.length, 168, 20, 160, cy + 70);
+
+  let svg = `<svg class="landscape-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // edges first (under nodes)
+  let edgeIdx = 0;
+  sources.forEach((s, i) => {
+    const p = srcPts[i], col = scoreHex(s.final_score);
+    const len = Math.hypot(p.x-cx, p.y-cy);
+    svg += `<path class="ls-edge" d="M ${cx} ${cy} L ${p.x} ${p.y}" stroke="${col}" stroke-width="1.4" opacity="0.55"
+      stroke-dasharray="${len}" stroke-dashoffset="${len}">
+      <animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="0.6s" begin="${0.05*edgeIdx}s" fill="freeze"/>
+    </path>`;
+    edgeIdx++;
+  });
+  claims.forEach((cl, i) => {
+    const p = claimPts[i], col = statusHex(cl.status);
+    const len = Math.hypot(p.x-cx, p.y-cy);
+    svg += `<path class="ls-edge" d="M ${cx} ${cy} L ${p.x} ${p.y}" stroke="${col}" stroke-width="1.4" opacity="0.55"
+      stroke-dasharray="${len}" stroke-dashoffset="${len}">
+      <animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="0.6s" begin="${0.05*edgeIdx}s" fill="freeze"/>
+    </path>`;
+    edgeIdx++;
+  });
+
+  // root node
+  svg += `<g class="ls-node">
+    <circle cx="${cx}" cy="${cy}" r="20" fill="#18211D" stroke="var(--jade)" stroke-width="2" class="ls-pulse"/>
+    <circle cx="${cx}" cy="${cy}" r="4" fill="#6FA287"/>
+    <title>${escapeAttr(c.topic)}</title>
+  </g>
+  <text x="${cx}" y="${cy+36}" text-anchor="middle" class="ls-label" font-weight="600">${escapeXml(truncate(c.topic, 30))}</text>`;
+
+  // source nodes
+  sources.forEach((s, i) => {
+    const p = srcPts[i], col = scoreHex(s.final_score);
+    const r = 7 + Math.round((s.final_score||0.3) * 7);
+    svg += `<g class="ls-node" style="animation:nodeIn .35s ease ${0.08*i+0.1}s both;">
+      <circle class="ls-node-circle" cx="${p.x}" cy="${p.y}" r="${r}" fill="${col}22" stroke="${col}" stroke-width="1.6"/>
+      <title>${escapeAttr((s.title||s.domain||'Source') + ' — score ' + (s.final_score!=null?s.final_score.toFixed(2):'—'))}</title>
+    </g>
+    <text x="${p.x}" y="${p.y - r - 6}" text-anchor="middle" class="ls-label ls-label-dim">${escapeXml(truncate(s.domain || s.title || 'source', 16))}</text>`;
+  });
+
+  // claim nodes
+  claims.forEach((cl, i) => {
+    const p = claimPts[i], col = statusHex(cl.status);
+    const r = 6 + Math.round((cl.confidence||0.3) * 7);
+    svg += `<g class="ls-node" style="animation:nodeIn .35s ease ${0.08*i+0.3}s both;">
+      <circle class="ls-node-circle" cx="${p.x}" cy="${p.y}" r="${r}" fill="${col}22" stroke="${col}" stroke-width="1.6"/>
+      <title>${escapeAttr((cl.claim_text||'Claim') + ' — ' + (cl.status||''))}</title>
+    </g>
+    <text x="${p.x}" y="${p.y + r + 13}" text-anchor="middle" class="ls-label ls-label-dim">${escapeXml(truncate(cl.claim_text || 'claim', 18))}</text>`;
+  });
+
+  svg += `<g id="nearbyCasesGroup"></g>`;
+  svg += `</svg>`;
+
+  mount.innerHTML = svg;
+
+  if (!sources.length && !claims.length) {
+    mount.innerHTML = svg + '';
+    const wrap = mount.closest('.landscape-wrap');
+    const emptyOverlay = el(`<div style="padding:40px 20px;">${emptyState('◎','Landscape not yet charted','Sources and claims will appear here once evidence is gathered.')}</div>`);
+    mount.appendChild(emptyOverlay);
+  }
+
+  // Nearby Cases — real semantic-search perimeter enhancement, best-effort
+  fetchNearbyCases(c, W, H, cx, cy);
+}
+function statusHex(status) {
+  const s = (status||'').toLowerCase();
+  if (s.includes('verified') && !s.includes('partial')) return '#93C08A';
+  if (s.includes('partial')) return '#D9A441';
+  return '#C1614A';
+}
+function truncate(s, n) { s = s || ''; return s.length > n ? s.slice(0, n-1) + '…' : s; }
+function escapeXml(s) { return escapeHtml(s); }
+function escapeAttr(s) { return escapeHtml(s); }
+
+async function fetchNearbyCases(c, W, H, cx, cy) {
+  if (!c.topic) return;
+  try {
+    const res = await apiPostSilent('/search/semantic', { query: c.topic, limit: 4 });
+    const results = (res?.data?.results || []).filter(r => r.report_id !== c.reportId).slice(0, 3);
+    if (!results.length) return;
+    const group = document.getElementById('nearbyCasesGroup');
+    if (!group) return;
+    const positions = [
+      { x: 46, y: 46 }, { x: W - 46, y: 46 }, { x: W - 46, y: H - 40 },
+    ];
+    let html = '';
+    results.forEach((r, i) => {
+      const p = positions[i]; if (!p) return;
+      const len = Math.hypot(p.x-cx, p.y-cy);
+      html += `<path class="ls-edge" d="M ${cx} ${cy} L ${p.x} ${p.y}" stroke="#C9A15A" stroke-width="1" stroke-dasharray="3 4" opacity="0"
+        style="animation: fadeIn2 .6s ease ${0.3+i*0.25}s forwards;"/>
+        <g class="ls-node" style="opacity:0;animation: fadeIn2 .6s ease ${0.4+i*0.25}s forwards;">
+          <circle cx="${p.x}" cy="${p.y}" r="7" fill="#C9A15A22" stroke="#C9A15A" stroke-width="1.4"/>
+          <title>${escapeAttr(r.topic + ' — similarity ' + (r.similarity_score!=null?r.similarity_score.toFixed(2):'—'))}</title>
+        </g>
+        <text x="${p.x}" y="${p.y + (p.y<H/2?-12:18)}" text-anchor="middle" class="ls-label ls-label-dim" style="opacity:0;animation: fadeIn2 .6s ease ${0.4+i*0.25}s forwards;" fill="#C9A15A">${escapeXml(truncate(r.topic, 20))}</text>`;
+    });
+    group.innerHTML = `<style>@keyframes fadeIn2{to{opacity:1}}</style>` + html;
+  } catch { /* silent — perimeter enhancement only */ }
+}
+// silent variant of apiPost that doesn't toast on failure (used for the nearby-cases perimeter touch)
+async function apiPostSilent(path, body) {
+  try {
+    const res = await fetch(Atlas.config.apiBase + path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: HISTORY
+   ══════════════════════════════════════════════════════════════════════ */
+function viewHistory(main, ctx) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('history')}</div>
+      <div class="page-title">Cases</div>
+      <div class="page-desc">Browse, search, and revisit your saved research.</div>
+      <div class="hr"></div>
+      <div class="grid grid-2" style="grid-template-columns:2fr 1fr;margin-bottom:14px;">
+        <input class="input" id="hFilter" placeholder="Filter by topic..." style="font-family:var(--sans);" />
+        <select class="input" id="hLimit"><option value="10">10 results</option><option value="20" selected>20 results</option><option value="50">50 results</option></select>
+      </div>
+      <div id="hList">${skeletonBlock('90px')}${skeletonBlock('90px')}${skeletonBlock('90px')}</div>
+    </div>
+  `;
+  ctx.innerHTML = `<div class="s-section"><div class="s-title">Tip</div><div class="small muted">Click any case to open its full Route, Evidence Trail, and Verification detail.</div></div>`;
+
+  const load = async () => {
+    const params = { limit: $('#hLimit').value, offset: 0 };
+    const topic = $('#hFilter').value.trim();
+    if (topic) params.topic = topic;
+    $('#hList').innerHTML = skeletonBlock('90px') + skeletonBlock('90px');
+    try {
+      const data = await apiGet('/history/reports', params);
+      const reports = data?.data?.reports || [], total = data?.data?.total ?? reports.length;
+      if (!reports.length) { $('#hList').innerHTML = emptyState('🔭', 'No research yet', 'Run your first case from the workspace.'); return; }
+      $('#hList').innerHTML = `<div class="small muted" style="font-family:var(--mono);margin-bottom:10px;">SHOWING <b style="color:var(--jade)">${reports.length}</b> OF ${total}</div>` +
+        reports.map(recentCaseCard).join('');
+    } catch { $('#hList').innerHTML = emptyState('⚠', 'Failed to load history', 'Check that the backend is running.'); }
+  };
+  $('#hFilter').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  $('#hLimit').addEventListener('change', load);
+  load();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: SEARCH (Discover)
+   ══════════════════════════════════════════════════════════════════════ */
+function viewSearch(main, ctx, opts) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('search')}</div>
+      <div class="page-title">Discover</div>
+      <div class="page-desc">Find related research by meaning, not just keywords.</div>
+      <div class="hr"></div>
+      <div class="card-glow">
+        <input class="input" id="sQuery" placeholder="e.g. transformer architecture trade-offs for edge deployment" style="font-family:var(--sans);" />
+        <div class="flex gap-10 mt-14">
+          <button class="btn btn-primary" id="sBtn" onclick="runSemanticSearch()">🔍 Search Memory</button>
+          <select class="input" id="sLimit" style="max-width:140px;"><option value="5" selected>5 results</option><option value="10">10</option><option value="20">20</option></select>
+        </div>
+      </div>
+      <div id="sResults" class="mt-18"></div>
+    </div>
+  `;
+  ctx.innerHTML = `<div class="s-section"><div class="s-title">How it works</div><div class="small muted">Atlas embeds every case into vector memory. Search by concept or question — not exact keyword matches.</div></div>`;
+  if (opts.prefillQuery) { $('#sQuery').value = opts.prefillQuery; runSemanticSearch(); }
+  $('#sQuery').addEventListener('keydown', e => { if (e.key === 'Enter') runSemanticSearch(); });
+}
+async function runSemanticSearch() {
+  const query = $('#sQuery').value.trim();
+  if (!query) { toast('Enter a search query.', 'err'); return; }
+  const btn = $('#sBtn'); btn.disabled = true;
+  const box = $('#sResults'); box.innerHTML = skeletonBlock('80px') + skeletonBlock('80px');
+  try {
+    const result = await apiPost('/search/semantic', { query, limit: parseInt($('#sLimit').value,10) });
+    btn.disabled = false;
+    if (!result || !result.success) { box.innerHTML = emptyState('⚠','Search failed','Check that the backend is running and research has been saved.'); return; }
+    const results = result.data.results || [];
+    if (!results.length) { box.innerHTML = emptyState('🔍','No matching research found','Try a different query or run more research first.'); return; }
+    box.innerHTML = `<div class="small muted" style="font-family:var(--mono);margin-bottom:10px;">FOUND <b style="color:var(--jade)">${results.length}</b> RELATED CASES</div>` +
+      results.map((r,i) => {
+        const c = scoreColor(r.similarity_score);
+        return `<div class="card card-hover" style="border-left:3px solid ${c};" onclick="openHistoryCase('${r.report_id}')">
+          <div class="flex between">
+            <div class="flex gap-10"><span class="badge badge-neutral">#${i+1}</span><b style="font-family:var(--serif);color:var(--ink);">${escapeHtml(r.topic)}</b></div>
+            <span style="font-family:var(--mono);color:${c};font-weight:700;">${r.similarity_score!=null?r.similarity_score.toFixed(2):'—'}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(r.similarity_score||0)*100}%;background:${c};"></div></div>
+          <p class="small muted mt-8">${escapeHtml((r.summary||'').slice(0,200))}${(r.summary||'').length>200?'…':''}</p>
+        </div>`;
+      }).join('');
+  } catch { btn.disabled = false; box.innerHTML = emptyState('⚠','Search failed',''); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: ANALYTICS (Insights)
+   ══════════════════════════════════════════════════════════════════════ */
+function viewAnalytics(main, ctx) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('analytics')}</div>
+      <div class="page-title">Insights</div>
+      <div class="page-desc">Research trends, verification scores, usage, and cost at a glance.</div>
+      <div class="hr"></div>
+      <div id="aBody">${skeletonBlock('90px')}${skeletonBlock('220px')}</div>
+    </div>
+  `;
+  ctx.innerHTML = '';
+  loadAnalytics();
+}
+async function loadAnalytics() {
+  const body = $('#aBody');
+  try {
+    const result = await apiGet('/analytics/overview');
+    if (!result || !result.success) { body.innerHTML = emptyState('⚠','Failed to load analytics','Make sure the backend is running.'); return; }
+    const d = result.data;
+    body.innerHTML = `
+      <div class="grid grid-6">
+        <div class="stat-tile"><div class="stat-value">${fmtNum(d.total_reports_generated)}</div><div class="stat-label">Reports</div></div>
+        <div class="stat-tile"><div class="stat-value">${fmtNum(d.total_sources_scraped)}</div><div class="stat-label">Sources</div></div>
+        <div class="stat-tile"><div class="stat-value">${fmtPct(d.average_verification_score)}</div><div class="stat-label">Avg Verification</div></div>
+        <div class="stat-tile"><div class="stat-value">${(d.average_execution_time_ms/1000).toFixed(1)}s</div><div class="stat-label">Avg Time</div></div>
+        <div class="stat-tile"><div class="stat-value">${fmtNum(d.total_tokens_used)}</div><div class="stat-label">Tokens</div></div>
+        <div class="stat-tile"><div class="stat-value">$${(d.total_estimated_cost_usd||0).toFixed(4)}</div><div class="stat-label">Est. Cost</div></div>
+      </div>
+      <div class="hr"></div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="field-label" style="margin-bottom:10px;">CASES FILED OVER TIME</div>
+          ${(d.reports_generated_over_time||[]).length ? lineChartSvg(d.reports_generated_over_time) : emptyState('📈','No time data yet','Run some research first.')}
+        </div>
+        <div class="card">
+          <div class="field-label" style="margin-bottom:10px;">VERIFICATION SCORE TREND</div>
+          ${(d.verification_score_trend||[]).length ? barChartSvg(d.verification_score_trend.map(v=>({label:v.date, value:v.avg_score, color:scoreHex(v.avg_score)})), true) : emptyState('✅','No verification trend yet','')}
+        </div>
+      </div>
+      <div class="grid grid-2 mt-14">
+        <div class="card">
+          <div class="field-label" style="margin-bottom:10px;">MOST RESEARCHED TOPICS</div>
+          ${(d.top_topics||[]).length ? hBarList(d.top_topics.map(t=>({label:t.topic, value:t.count}))) : emptyState('📊','No topic data yet','')}
+        </div>
+        <div class="card">
+          <div class="field-label" style="margin-bottom:10px;">SOURCE DOMAIN DISTRIBUTION</div>
+          ${(d.source_domain_distribution||[]).length ? hBarList(d.source_domain_distribution.map(t=>({label:t.domain, value:t.count})), true) : emptyState('🌐','No domain data yet','')}
+        </div>
+      </div>
+      <div class="card mt-14">
+        <div class="field-label" style="margin-bottom:12px;">⚡ AVERAGE LATENCY BREAKDOWN</div>
+        ${latencyBars(d.average_retrieval_latency_ms||0, d.average_execution_time_ms||1)}
+      </div>
+    `;
+  } catch { body.innerHTML = emptyState('⚠','Failed to load analytics',''); }
+}
+function lineChartSvg(points) {
+  const W=640,H=180,pad=24;
+  const vals = points.map(p=>p.count);
+  const max = Math.max(...vals, 1);
+  const stepX = (W-2*pad)/Math.max(points.length-1,1);
+  const coords = points.map((p,i)=>({x: pad+i*stepX, y: H-pad-(p.count/max)*(H-2*pad)}));
+  const path = coords.map((c,i)=>`${i===0?'M':'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
+  const area = path + ` L ${coords[coords.length-1].x} ${H-pad} L ${coords[0].x} ${H-pad} Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:180px;">
+    <path d="${area}" fill="#6FA28718"/>
+    <path d="${path}" fill="none" stroke="#6FA287" stroke-width="2"/>
+    ${coords.map((c,i)=>`<circle cx="${c.x}" cy="${c.y}" r="3" fill="#6FA287"><title>${escapeAttr(points[i].date+': '+points[i].count)}</title></circle>`).join('')}
+  </svg>`;
+}
+function barChartSvg(items, isPct) {
+  const W=640,H=180,pad=24,bw=(W-2*pad)/items.length*0.6;
+  const max = isPct ? 1 : Math.max(...items.map(i=>i.value),1);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:180px;">
+    <line x1="${pad}" y1="${H-pad-(0.75*(H-2*pad))}" x2="${W-pad}" y2="${H-pad-(0.75*(H-2*pad))}" stroke="#93C08A44" stroke-dasharray="3 4"/>
+    ${items.map((it,i)=>{ const slot=(W-2*pad)/items.length; const x=pad+i*slot+(slot-bw)/2; const h=(it.value/max)*(H-2*pad); const y=H-pad-h;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${it.color||'#6FA287'}"><title>${escapeAttr((it.label||'')+': '+(isPct?fmtPct(it.value):it.value))}</title></rect>`;
+    }).join('')}
+  </svg>`;
+}
+function hBarList(items, showPct) {
+  const max = Math.max(...items.map(i=>i.value), 1);
+  return `<div class="grid" style="gap:8px;">` + items.map(it => `
+    <div>
+      <div class="flex between small" style="margin-bottom:3px;"><span class="muted">${escapeHtml(it.label)}</span><span style="font-family:var(--mono);color:var(--ink);">${it.value}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(it.value/max)*100}%;background:var(--jade);"></div></div>
+    </div>`).join('') + `</div>`;
+}
+function latencyBars(avgRet, avgTotal) {
+  const rows = [['Retrieval', avgRet, '#6FA287'], ['Processing', Math.max(avgTotal-avgRet,0), '#C9A15A'], ['Total', avgTotal, '#93C08A']];
+  return `<div class="grid grid-3">` + rows.map(([label,val,col]) => {
+    const pct = Math.min(val/Math.max(avgTotal,1),1)*100;
+    return `<div>
+      <div class="flex between small" style="margin-bottom:4px;"><span class="muted" style="font-family:var(--mono);text-transform:uppercase;font-size:10.5px;">${label}</span><span style="font-family:var(--mono);font-weight:600;color:${col};">${(val/1000).toFixed(1)}s</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col};"></div></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: KNOWLEDGE BASE
+   ══════════════════════════════════════════════════════════════════════ */
+function viewKB(main, ctx) {
+  main.innerHTML = `
+    <div class="page">
+      <div class="crumbs">${crumbsHtml('kb')}</div>
+      <div class="page-title">Knowledge Base</div>
+      <div class="page-desc">Inspect and manage Atlas's persistent research memory.</div>
+      <div class="hr"></div>
+      <div id="kbBody">${skeletonBlock('100px')}${skeletonBlock('220px')}</div>
+    </div>
+  `;
+  ctx.innerHTML = '';
+  loadKB();
+}
+let kbConfirmDelete = null;
+async function loadKB() {
+  const body = $('#kbBody');
+  try {
+    const result = await apiGet('/knowledge-base');
+    if (!result || !result.success) { body.innerHTML = emptyState('⚠','Failed to load knowledge base',''); return; }
+    Atlas.state.kbCache = result.data;
+    renderKB();
+  } catch { body.innerHTML = emptyState('⚠','Failed to load knowledge base',''); }
+}
+function renderKB() {
+  const kb = Atlas.state.kbCache; if (!kb) return;
+  const body = $('#kbBody');
+  let html = `<div class="grid grid-3">
+    <div class="stat-tile"><div class="field-label" style="margin-bottom:6px;">SQLite Reports</div><div style="font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--jade);">${kb.total_reports}</div></div>
+    <div class="stat-tile"><div class="field-label" style="margin-bottom:6px;">Vector Chunks</div><div style="font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--stone);">${kb.total_chunks}</div></div>
+    <div class="stat-tile"><div class="field-label" style="margin-bottom:6px;">ChromaDB Size</div><div style="font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--brass);">${kb.chroma_collection_size}</div></div>
+  </div><div class="hr"></div>`;
+
+  if (kb.recent_topics?.length) {
+    html += `<div class="field-label" style="margin-bottom:8px;">RECENT TOPICS</div><div class="chip-row" style="margin-top:0;margin-bottom:16px;">` +
+      kb.recent_topics.map(t => `<span class="chip" style="cursor:default;">${escapeHtml(t)}</span>`).join('') + `</div>`;
+  }
+
+  if (kb.report_ids?.length) {
+    html += `<div class="field-label" style="margin-bottom:8px;">STORED REPORTS</div>
+      <div class="small muted mt-8" style="margin-bottom:10px;">${kb.report_ids.length} reports in memory · Deleting removes both SQLite and ChromaDB entries.</div>
+      <div id="kbRows">` + kb.report_ids.map(rid => kbRowHtml(rid)).join('') + `</div>`;
+    if (kbConfirmDelete) html += `<div class="card mt-14" style="border-color:var(--terracotta-border);">⚠️ Confirm deletion of <code style="font-family:var(--mono);color:var(--terracotta);">${kbConfirmDelete.slice(0,16)}…</code> — this is permanent.
+      <div class="mt-8"><button class="btn btn-ghost" onclick="kbConfirmDelete=null;renderKB();">Cancel</button></div></div>`;
+  } else {
+    html += emptyState('🗄️','Knowledge base is empty','Run research to populate the knowledge base.');
+  }
+  body.innerHTML = html;
+}
+function kbRowHtml(rid) {
+  const pending = kbConfirmDelete === rid;
+  return `<div class="kb-row" style="${pending?'border-color:var(--terracotta-border);':''}">
+    <span class="id">${rid}</span>
+    ${pending
+      ? `<button class="btn btn-danger" onclick="confirmKbDelete('${rid}')">✓ Confirm</button>`
+      : `<button class="btn-icon" title="Delete" onclick="kbConfirmDelete='${rid}';renderKB();">🗑</button>`}
+  </div>`;
+}
+async function confirmKbDelete(rid) {
+  try {
+    const res = await apiDelete(`/knowledge-base/report/${rid}`);
+    if (res && res.success) { toast('Deleted ' + rid.slice(0,8) + '…', 'ok'); kbConfirmDelete = null; loadKB(); }
+    else { toast('Delete failed.', 'err'); kbConfirmDelete = null; renderKB(); }
+  } catch { kbConfirmDelete = null; renderKB(); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIEW: CHAT (Ask Atlas)
+   ══════════════════════════════════════════════════════════════════════ */
+function viewChat(main, ctx) {
+  main.innerHTML = `
+    <div class="page" style="display:flex;flex-direction:column;min-height:calc(100dvh - 86px);">
+      <div class="crumbs">${crumbsHtml('chat')}</div>
+      <div class="page-title">Ask Atlas</div>
+      <div class="page-desc">Ask follow-up questions across your saved research.</div>
+      <div class="grid grid-2" style="margin:14px 0;max-width:640px;">
+        <input class="input" id="cTopic" placeholder="Research topic context (e.g. AI in healthcare)" style="font-family:var(--sans);" />
+        <div class="flex gap-10">
+          <span class="small muted">Chunks:</span>
+          <input class="input" id="cTopK" type="range" min="1" max="10" value="4" style="padding:0;">
+          <span class="small" id="cTopKVal" style="font-family:var(--mono);">4</span>
+        </div>
+      </div>
+      <div class="hr" style="margin:10px 0;"></div>
+      <div id="chatMessages" style="flex:1;display:flex;flex-direction:column;gap:10px;padding:6px 0;"></div>
+      <div class="hr" style="margin:10px 0;"></div>
+      <div class="flex gap-10">
+        <input class="input" id="chatInput" placeholder="What are the main risks identified in my research?" style="font-family:var(--sans);" />
+        <button class="btn btn-primary" id="chatSendBtn" onclick="sendChat()">Send →</button>
+        <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
+      </div>
+    </div>
+  `;
+  ctx.innerHTML = `<div class="s-section"><div class="s-title">How it works</div><div class="small muted">Atlas retrieves relevant report chunks from vector memory and answers using your research history.</div></div>`;
+  $('#cTopK').addEventListener('input', e => $('#cTopKVal').textContent = e.target.value);
+  $('#chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+  renderChatMessages();
+}
+function renderChatMessages() {
+  const box = $('#chatMessages'); if (!box) return;
+  const msgs = Atlas.state.chatMessages;
+  if (!msgs.length) { box.innerHTML = emptyState('💬','Start a conversation','Set a topic above, then ask anything about your research.'); return; }
+  box.innerHTML = msgs.map(m => {
+    if (m.role === 'user') return `<div style="display:flex;justify-content:flex-end;"><div class="bubble-user">${escapeHtml(m.content)}</div></div>`;
+    const chunksHtml = (m.chunks||[]).length ? `<details class="small muted mt-8"><summary style="cursor:pointer;">📎 ${m.chunks.length} retrieved chunks</summary>
+      ${m.chunks.map(ch => `<div class="card" style="margin:8px 0 0;"><div class="flex between small muted" style="font-family:var(--mono);"><span>Topic: <b style="color:var(--jade)">${escapeHtml(ch.topic)}</b></span><span>Sim: <b style="color:var(--ink)">${ch.similarity_score?.toFixed(2)}</b></span></div><div class="small" style="margin-top:6px;color:var(--ink2);">${escapeHtml((ch.content||'').slice(0,300))}…</div></div>`).join('')}
+      </details>` : '';
+    return `<div style="display:flex;justify-content:flex-start;"><div><div class="bubble-label">⌗ Atlas AI</div><div class="bubble-bot">${escapeHtml(m.content)}</div>${chunksHtml}</div></div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+async function sendChat() {
+  const q = $('#chatInput').value.trim();
+  const topic = $('#cTopic').value.trim();
+  if (!q) return;
+  if (!topic) { toast('Set a topic context first.', 'err'); return; }
+  $('#chatInput').value = '';
+  Atlas.state.chatMessages.push({ role: 'user', content: q });
+  renderChatMessages();
+  const btn = $('#chatSendBtn'); btn.disabled = true;
+  try {
+    const result = await apiPost('/chat/research', {
+      topic, question: q,
+      history: Atlas.state.chatHistoryApi.slice(-12),
+      top_k_chunks: parseInt($('#cTopK').value, 10),
+    });
+    if (result && result.success) {
+      const { answer, retrieved_chunks } = result.data;
+      Atlas.state.chatMessages.push({ role: 'assistant', content: answer, chunks: retrieved_chunks || [] });
+      Atlas.state.chatHistoryApi.push({ role: 'user', content: q }, { role: 'assistant', content: answer });
+    } else {
+      Atlas.state.chatMessages.push({ role: 'assistant', content: '⚠️ Failed to get a response. Please check the backend.', chunks: [] });
+    }
+  } catch {
+    Atlas.state.chatMessages.push({ role: 'assistant', content: '⚠️ Failed to get a response. Please check the backend.', chunks: [] });
+  } finally { btn.disabled = false; renderChatMessages(); }
+}
+function clearChat() { Atlas.state.chatMessages = []; Atlas.state.chatHistoryApi = []; renderChatMessages(); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR KNOWLEDGE SIGNALS — computed from real history + analytics
+   ══════════════════════════════════════════════════════════════════════ */
+async function loadSignals() {
+  const box = $('#signalsBox');
+  try {
+    const data = await apiGet('/history/reports', { limit: 50, offset: 0 });
+    const reports = data?.data?.reports || [];
+    const todayStr = new Date().toISOString().slice(0,10);
+    const stable = reports.filter(r => (r.verification_score||0) >= 0.75).length;
+    const attention = reports.filter(r => (r.verification_score||0) < 0.5 && r.verification_score != null).length;
+    const newToday = reports.filter(r => (r.created_at||'').slice(0,10) === todayStr).length;
+    box.innerHTML = `
+      <div class="signal-row"><span class="signal-dot" style="background:var(--sage)"></span>Stable<span class="sr-count">${stable}</span></div>
+      <div class="signal-row"><span class="signal-dot" style="background:var(--amber)"></span>Needs Attention<span class="sr-count">${attention}</span></div>
+      <div class="signal-row"><span class="signal-dot" style="background:var(--jade)"></span>New Today<span class="sr-count">${newToday}</span></div>
+    `;
+  } catch {
+    box.innerHTML = `<div class="signal-row"><span class="signal-dot" style="background:var(--ink3)"></span>Unavailable</div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════════════════ */
+checkHealth();
+setInterval(checkHealth, 20000);
+loadSignals();
+Atlas.nav('home');
+</script>
+</body>
+</html>

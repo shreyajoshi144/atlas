@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/
+
+# Vector DB
+chroma_db/
+vector_db/
+
+# Downloads / generated files
+downloads/
+uploads/
+temp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

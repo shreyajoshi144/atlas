@@ -1,5 +1,9 @@
 <div align="center">
 
+*Atlas AI · Case files built, not chats answered.*
+
+</div><div align="center">
+
 #  Atlas
 
 ### *Atlas isn't where research ends. It's where knowledge lives.*
@@ -68,32 +72,51 @@ Transform every research query into a structured research case containing:
 
 Atlas performs an end-to-end research workflow:
 
-```
-Research Query
-        │
-        ▼
-Source Retrieval
-        │
-        ▼
-Web Scraping
-        │
-        ▼
-Evidence Ranking
-        │
-        ▼
-Claim Extraction
-        │
-        ▼
-Cross Verification
-        │
-        ▼
-Confidence Analysis
-        │
-        ▼
-Executive Report
-        │
-        ▼
-Semantic Indexing
+```mermaid
+flowchart TB
+    subgraph Client["Frontend — Vanilla JS SPA"]
+        UI["index.html<br/>HUD-style single-page app"]
+    end
+
+    subgraph API["Backend — FastAPI"]
+        Auth["Auth Middleware<br/>JWT-style signed tokens"]
+        Routes["REST Routes<br/>research · chat · search · history · analytics · knowledge-base"]
+    end
+
+    subgraph Pipeline["LangGraph Multi-Agent Pipeline"]
+        direction TB
+        N1["1. Initialize Session"] --> N2["2. Search (Tavily)"]
+        N2 --> N3["3. Rank Sources<br/>BM25 + cosine + fuzzy + credibility"]
+        N3 --> N4["4. Scrape<br/>(async, retry + dedupe)"]
+        N4 --> N5["5. Merge Evidence"]
+        N5 --> N6["6. Verify Claims<br/>(Groq LLM agent)"]
+        N5 --> N7["7. Write Report<br/>(Groq LLM agent)"]
+        N6 --> N8["8. Executive Brief<br/>(Groq LLM agent)"]
+        N7 --> N8
+        N8 --> N9["9. Persist + Index"]
+    end
+
+    subgraph External["External Services"]
+        Tavily["Tavily<br/>Web Search"]
+        Groq["Groq<br/>Llama 3.3 70B"]
+    end
+
+    subgraph Storage["Storage"]
+        SQLite[("SQLite<br/>reports · sessions · sources<br/>users · analytics")]
+        Chroma[("ChromaDB<br/>chunk embeddings<br/>local sentence-transformers")]
+    end
+
+    UI -- "Bearer token" --> Auth
+    Auth --> Routes
+    Routes --> Pipeline
+    N2 -.-> Tavily
+    N6 -.-> Groq
+    N7 -.-> Groq
+    N8 -.-> Groq
+    N9 --> SQLite
+    N9 --> Chroma
+    Routes -- "semantic search / chat retrieval" --> Chroma
+    Routes -- "history / analytics" --> SQLite
 ```
 
 ---
@@ -176,68 +199,12 @@ Monitor research activity through:
 
 ## Frontend
 
-- Streamlit
-- Custom Design System
-- Modular UI Components
-- Responsive Dashboard
-
----
+- Vanilla JS
 
 ## APIs
 
 - Tavily Search API
 - Groq API
-
----
-
-# Architecture
-
-```
-                   User
-
-                     │
-
-                     ▼
-
-            Atlas Frontend
-
-                     │
-
-                     ▼
-
-             FastAPI Backend
-
-                     │
-
-      ┌──────────────┼──────────────┐
-      │              │              │
-      ▼              ▼              ▼
-
- LangGraph      Tavily Search    Groq LLM
-
-      │              │              │
-
-      └──────────────┼──────────────┘
-                     ▼
-
-          Research Pipeline
-
-                     ▼
-
-          Confidence Analysis
-
-                     ▼
-
-          Executive Report
-
-                     ▼
-
-     ChromaDB Semantic Memory
-
-                     ▼
-
-           Future Retrieval
-```
 
 ---
 

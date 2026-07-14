@@ -1,123 +1,101 @@
 <div align="center">
 
-*Atlas AI · Case files built, not chats answered.*
-
-</div><div align="center">
-
-#  Atlas
+# Atlas
 
 ### *Atlas isn't where research ends. It's where knowledge lives.*
 
-**A Living Research Workspace that transforms research into structured, verifiable, and evolving Living Cases.**
+**An AI-powered Living Research Workspace that transforms web research into structured, verifiable, and evolving Living Cases.**
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)]()
-[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_AI-121212?style=for-the-badge)]()
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-5C2D91?style=for-the-badge)]()
-[![Groq](https://img.shields.io/badge/Groq-LLM-FF6B35?style=for-the-badge)]()
+Rather than generating one-time answers, Atlas builds persistent knowledge assets that preserve evidence, citations, confidence scores, semantic memory, and research history—allowing every investigation to grow over time.
+
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge\&logo=python\&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge\&logo=fastapi\&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_AI-121212?style=for-the-badge)
+![LangChain](https://img.shields.io/badge/LangChain-RAG-0A7B83?style=for-the-badge)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-5C2D91?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-Llama_3.3-FF6B35?style=for-the-badge)
 
 </div>
 
 ---
-<img width="1536" height="1024" alt="atlas" src="https://github.com/user-attachments/assets/8006f98b-b830-4db5-a457-6a715a304b06" />
+# Demo Screenshots
+
+<img width="1470" height="956" alt="Screenshot 2026-07-14 at 7 18 56 PM" src="https://github.com/user-attachments/assets/bbf9cd67-03bc-4659-a4d7-777237c79ec9" />
+<img width="1470" height="956" alt="Screenshot 2026-07-14 at 7 19 15 PM" src="https://github.com/user-attachments/assets/2b344005-9290-44ce-a422-e54c6a5af177" />
+<img width="1470" height="956" alt="Screenshot 2026-07-14 at 7 19 33 PM" src="https://github.com/user-attachments/assets/8acb6ecd-2163-4e0f-935a-57540bd2f7d2" />
+<img width="1470" height="956" alt="Screenshot 2026-07-14 at 7 19 23 PM" src="https://github.com/user-attachments/assets/de0614c9-fa09-4d20-b57c-477dfce68f95" />
 
 # Overview
 
-Atlas is an AI-powered **Living Research Workspace** designed to help users navigate complex information with confidence.
+Atlas is an AI-powered research operating system that transforms web research into structured, reusable knowledge.
 
-Unlike traditional AI assistants that generate one-time answers, Atlas organizes every investigation into a **Living Case**—a structured knowledge asset that combines evidence, source verification, confidence analysis, semantic memory, and long-term retrieval.
+Unlike traditional AI assistants that generate isolated conversations, Atlas creates **Living Cases**—persistent research workspaces that combine:
 
-Every research session becomes traceable, searchable, and reusable.
+* Research questions
+* Verified evidence
+* Source citations
+* Executive summaries
+* AI-generated reports
+* Confidence analysis
+* Semantic memory
+* Long-term retrieval
+
+Every investigation becomes a searchable knowledge asset instead of a forgotten chat.
 
 ---
 
 # Why Atlas?
 
-Modern AI tools generate answers.
+Most AI assistants answer questions.
 
-Atlas generates **knowledge**.
+**Atlas builds knowledge.**
 
-Instead of producing isolated conversations, Atlas builds persistent research cases that preserve:
+Traditional chatbots lose context once a conversation ends.
 
-- Questions
-- Sources
-- Evidence
-- Claims
-- Confidence
-- Research history
-- Semantic memory
+Atlas preserves every investigation as a Living Case, enabling users to:
 
-Every conclusion remains traceable back to its supporting evidence.
+* Revisit previous research
+* Continue unfinished investigations
+* Compare findings across cases
+* Verify supporting evidence
+* Retrieve related knowledge semantically
+* Build a growing personal knowledge base
+
+Every conclusion remains transparent, explainable, and backed by evidence.
 
 ---
 
-# Core Features
+# Key Features
 
 ## Living Cases
 
-Transform every research query into a structured research case containing:
+Every research session is transformed into a persistent knowledge object containing:
 
-- Research question
-- Executive summary
-- Supporting evidence
-- Source citations
-- Confidence score
-- Retrieved documents
-- Generated report
-- Semantic embeddings
+* Research question
+* Executive summary
+* AI-generated report
+* Supporting evidence
+* Verified claims
+* Source citations
+* Confidence score
+* Retrieved documents
+* Semantic embeddings
 
 ---
 
-## Intelligent Research Pipeline
+## Multi-Agent Research Pipeline
 
-Atlas performs an end-to-end research workflow:
+Atlas orchestrates multiple AI agents that collaborate to perform end-to-end research.
 
-```mermaid
-flowchart TB
-    subgraph Client["Frontend — Vanilla JS SPA"]
-        UI["index.html<br/>HUD-style single-page app"]
-    end
+Specialized agents handle:
 
-    subgraph API["Backend — FastAPI"]
-        Auth["Auth Middleware<br/>JWT-style signed tokens"]
-        Routes["REST Routes<br/>research · chat · search · history · analytics · knowledge-base"]
-    end
-
-    subgraph Pipeline["LangGraph Multi-Agent Pipeline"]
-        direction TB
-        N1["1. Initialize Session"] --> N2["2. Search (Tavily)"]
-        N2 --> N3["3. Rank Sources<br/>BM25 + cosine + fuzzy + credibility"]
-        N3 --> N4["4. Scrape<br/>(async, retry + dedupe)"]
-        N4 --> N5["5. Merge Evidence"]
-        N5 --> N6["6. Verify Claims<br/>(Groq LLM agent)"]
-        N5 --> N7["7. Write Report<br/>(Groq LLM agent)"]
-        N6 --> N8["8. Executive Brief<br/>(Groq LLM agent)"]
-        N7 --> N8
-        N8 --> N9["9. Persist + Index"]
-    end
-
-    subgraph External["External Services"]
-        Tavily["Tavily<br/>Web Search"]
-        Groq["Groq<br/>Llama 3.3 70B"]
-    end
-
-    subgraph Storage["Storage"]
-        SQLite[("SQLite<br/>reports · sessions · sources<br/>users · analytics")]
-        Chroma[("ChromaDB<br/>chunk embeddings<br/>local sentence-transformers")]
-    end
-
-    UI -- "Bearer token" --> Auth
-    Auth --> Routes
-    Routes --> Pipeline
-    N2 -.-> Tavily
-    N6 -.-> Groq
-    N7 -.-> Groq
-    N8 -.-> Groq
-    N9 --> SQLite
-    N9 --> Chroma
-    Routes -- "semantic search / chat retrieval" --> Chroma
-    Routes -- "history / analytics" --> SQLite
-```
+* Web Search
+* Source Ranking
+* Evidence Extraction
+* Claim Verification
+* Report Generation
+* Executive Brief Creation
+* Semantic Indexing
 
 ---
 
@@ -127,37 +105,25 @@ Research doesn't disappear after generation.
 
 Atlas stores reports inside ChromaDB, enabling:
 
-- Semantic search
-- Similar case retrieval
-- Knowledge reuse
-- Context-aware follow-up questions
+* Semantic search
+* Related case retrieval
+* Long-term knowledge retention
+* Context-aware follow-up questions
+* Knowledge reuse across investigations
 
 ---
 
-## Knowledge Navigation
+## Explainable AI
 
-Atlas treats research as a navigable landscape rather than isolated outputs.
+Every conclusion is traceable back to supporting evidence.
 
-Users can:
+Each report includes:
 
-- Explore previous cases
-- Compare findings
-- Trace supporting evidence
-- Navigate related research
-- Continue previous investigations
-
----
-
-## Source Verification
-
-Every report includes:
-
-- Source attribution
-- Evidence mapping
-- Confidence scoring
-- Citation tracking
-
-This creates transparent and explainable AI-generated research.
+* Source attribution
+* Citation tracking
+* Confidence scoring
+* Evidence mapping
+* Transparent reasoning
 
 ---
 
@@ -165,81 +131,179 @@ This creates transparent and explainable AI-generated research.
 
 Monitor research activity through:
 
-- Total research cases
-- Average confidence
-- Knowledge base growth
-- Source distribution
-- Retrieval statistics
+* Total research cases
+* Knowledge base growth
+* Average confidence score
+* Source distribution
+* Retrieval statistics
+
+---
+
+# Research Pipeline
+
+```mermaid
+flowchart TB
+    subgraph Client["Frontend — HTML • CSS • Vanilla JavaScript"]
+        UI["Single Page Application"]
+    end
+
+    subgraph API["Backend — FastAPI"]
+        Auth["Authentication"]
+        Routes["REST API"]
+    end
+
+    subgraph Pipeline["LangGraph Multi-Agent Workflow"]
+        direction TB
+
+        A["Initialize Session"]
+        B["Search Web (Tavily)"]
+        C["Rank Sources"]
+        D["Extract & Clean Evidence"]
+        E["Merge Evidence"]
+        F["Verify Claims"]
+        G["Generate Report"]
+        H["Executive Summary"]
+        I["Persist & Index"]
+
+        A --> B
+        B --> C
+        C --> D
+        D --> E
+        E --> F
+        E --> G
+        F --> H
+        G --> H
+        H --> I
+    end
+
+    subgraph External
+        Tavily["Tavily Search"]
+        Groq["Groq Llama 3.3"]
+    end
+
+    subgraph Storage
+        SQLite[("SQLite")]
+        Chroma[("ChromaDB")]
+    end
+
+    UI --> Auth
+    Auth --> Routes
+    Routes --> Pipeline
+
+    B -.-> Tavily
+    F -.-> Groq
+    G -.-> Groq
+    H -.-> Groq
+
+    I --> SQLite
+    I --> Chroma
+
+    Routes --> SQLite
+    Routes --> Chroma
+```
+
+---
+
+# System Architecture
+
+```
+Frontend (HTML/CSS/JavaScript)
+            │
+            ▼
+     FastAPI REST API
+            │
+            ▼
+ LangGraph Multi-Agent Workflow
+            │
+            ▼
+Search → Ranking → Verification → Report Generation
+            │
+            ▼
+SQLite + ChromaDB
+            │
+            ▼
+Semantic Search & Knowledge Retrieval
+```
 
 ---
 
 # Tech Stack
 
+## AI & Agentic Systems
+
+* LangGraph
+* LangChain
+* Retrieval-Augmented Generation (RAG)
+* Prompt Engineering
+* Sentence Transformers
+
 ## Backend
 
-- FastAPI
-- Python
-- LangGraph
-- LangChain
-- Groq LLM
-- ChromaDB
-- SQLite
-
----
-
-## AI & NLP
-
-- Retrieval-Augmented Generation (RAG)
-- Semantic Search
-- Embeddings
-- Agentic Workflows
-- Prompt Engineering
-
----
+* Python 3.11+
+* FastAPI
+* AsyncIO
+* Pydantic
 
 ## Frontend
 
-- Vanilla JS
+* HTML5
+* CSS3
+* Vanilla JavaScript (ES6)
+* Fetch API
 
-## APIs
+## Search & Intelligence
 
-- Tavily Search API
-- Groq API
+* Tavily Search API
+* BM25 Ranking
+* Cosine Similarity
+* Fuzzy Matching
+
+## Vector Database
+
+* ChromaDB
+
+## Database
+
+* SQLite
+
+## Large Language Model
+
+* Groq
+* Llama 3.3 70B
 
 ---
 
 # Project Structure
 
-```
+```text
 Atlas/
-
-backend/
 │
-├── api/
-├── agents/
-├── services/
-├── models/
-├── database/
-├── vector_store/
-└── main.py
-
-frontend/
+├── backend/
+│   ├── agents/
+│   ├── api/
+│   ├── database/
+│   ├── models/
+│   ├── services/
+│   ├── vector_store/
+│   └── main.py
 │
-├── streamlit_app.py
-├── design_system.py
-├── utils.py
-└── pages/
-
-requirements.txt
-
-README.md
+├── frontend/
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   ├── assets/
+│   └── components/
+│
+├── requirements.txt
+├── .env.example
+└── README.md
 ```
 
 ---
 
-# Running Locally
+# Getting Started
 
-## Clone
+## Clone the Repository
 
 ```bash
 git clone https://github.com/shreyajoshi144/atlas.git
@@ -249,21 +313,19 @@ cd atlas
 
 ---
 
-## Create Virtual Environment
+## Create a Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate
-
-Mac/Linux
+### macOS / Linux
 
 ```bash
 source .venv/bin/activate
 ```
 
-Windows
+### Windows
 
 ```bash
 .venv\Scripts\activate
@@ -279,24 +341,18 @@ pip install -r requirements.txt
 
 ---
 
-## Configure Environment
+## Configure Environment Variables
 
-Create
-
-```
-.env
-```
-
-Example
+Create a `.env` file.
 
 ```env
-GROQ_API_KEY=YOUR_KEY
-TAVILY_API_KEY=YOUR_KEY
+GROQ_API_KEY=your_groq_api_key
+TAVILY_API_KEY=your_tavily_api_key
 ```
 
 ---
 
-## Start Backend
+## Run the Backend
 
 ```bash
 cd backend
@@ -304,36 +360,54 @@ cd backend
 uvicorn main:app --reload
 ```
 
+Backend runs at:
+
+```
+http://localhost:8000
+```
+
 ---
 
-## Start Frontend
+## Run the Frontend
+
+Open the frontend using a local server.
 
 ```bash
 cd frontend
 
-streamlit run streamlit_app.py
+python -m http.server 5500
 ```
+
+Visit:
+
+```
+http://localhost:5500
+```
+
+---
+
+# REST API
+
+| Method | Endpoint          | Description               |
+| ------ | ----------------- | ------------------------- |
+| POST   | `/research`       | Create a new Living Case  |
+| POST   | `/chat`           | Continue an existing case |
+| GET    | `/search`         | Semantic knowledge search |
+| GET    | `/history`        | Retrieve previous cases   |
+| GET    | `/analytics`      | Research analytics        |
+| GET    | `/knowledge-base` | Browse stored research    |
 
 ---
 
 # Future Roadmap
 
-- Living Knowledge Graph
-- Knowledge Evolution Engine
-- Versioned Living Cases
-- Perspective-based reports
-- Case comparison
-- Multi-user collaboration
-- PDF & PowerPoint export
-- Real-time research monitoring
-- Case branching & merging
+* Versioned Living Cases
+* Perspective-Based Reports
+* Case Comparison
+* Case Branching & Merging
+* Multi-User Collaboration
+* Team Workspaces
+* Citation Graph Visualization
+* PDF & PowerPoint Export
+* Real-Time Research Monitoring
 
----
-
-
-
-### Atlas
-
-*"Every investigation becomes a Living Case. Every conclusion earns its confidence."*
-
-</div>

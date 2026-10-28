@@ -33,3 +33,10 @@ Thumbs.db
 
 # Logs
 *.log
+.env.*
+!.env.example
+
+# Local runtime state (databases, vector store, logs) — never commit user data
+data/
+*.db
+*.sqlite3

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in to Atlas</title><meta name="robots" content="noindex" /><meta name="theme-color" content="#FBF7F0" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%237A6270' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Cpath d='M32 8 C40 20 40 30 32 34 C24 30 24 20 32 8Z' fill='%23C8999C'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/site.css">
+</head>
+<body class="au-body">
+<a class="skip" href="#auMain">Skip to the form</a>
+<div class="au-shell">
+  <aside class="au-art" aria-hidden="true">
+    <a class="sh-brand" href="index.html" tabindex="-1"><span class="sh-mark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M32 10 C41 21 41 31 32 36 C23 31 23 21 32 10Z" fill="currentColor" fill-opacity=".25"/><path d="M32 36 V54 M32 46 C26 44 22 40 21 36 M32 44 C38 42 42 38 43 34"/></svg></span>Atlas</a>
+    <div><blockquote>Every claim keeps its roots.</blockquote><small>Research you can trace. AI you can measure.</small></div>
+  </aside>
+  <main class="au-main" id="auMain">
+    <div class="au-top"><a class="au-linkbtn" href="index.html">Back to the site</a><span class="au-foot"><a href="terms.html">Terms</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="contact.html">Contact</a></span></div>
+    <div class="au-wrap"><h1 class="sr-only">Atlas account</h1>
+     <div class="au-card">
+      <div class="au-tabs" role="tablist" aria-label="Account">
+        <button class="au-tab" role="tab" id="tab-signin" aria-controls="view-signin" aria-selected="true" type="button">Sign in</button>
+        <button class="au-tab" role="tab" id="tab-signup" aria-controls="view-signup" aria-selected="false" type="button">Create account</button>
+      </div>
+      <p class="au-banner" id="banner" role="status" aria-live="polite"></p>
+
+      <section class="au-pane" id="view-signin" role="tabpanel" aria-labelledby="tab-signin">
+        <h2>Welcome back</h2><p class="au-lede">Sign in to continue your research, comparisons and workflows.</p>
+        <form id="signinForm" novalidate>
+          <div class="au-field"><label for="siEmail">Email address</label><div class="au-input"><input class="input" id="siEmail" name="siEmail" type="email" autocomplete="username" placeholder="you@domain.com" aria-describedby="siEmailErr siEmailHint" required></div><div id="siEmailHint" hidden></div><div class="au-err" id="siEmailErr" role="alert"></div></div>
+          <div class="au-field"><label for="siPassword">Password</label><div class="au-input has-toggle"><input class="input" id="siPassword" name="siPassword" type="password" autocomplete="current-password" placeholder="Your password" aria-describedby="siPasswordErr siPasswordHint" required><button type="button" class="au-toggle" data-pw="siPassword" aria-label="Show password">Show</button></div><div id="siPasswordHint" hidden></div><div class="au-err" id="siPasswordErr" role="alert"></div></div>
+          <div class="au-row"><label class="check-row" style="margin:0"><input type="checkbox" id="siRemember" checked> Keep me signed in</label><button type="button" class="au-linkbtn" id="toForgot">Forgot password?</button></div>
+          <div class="au-err" id="siFormErr" role="alert" style="margin-top:14px"></div>
+          <button class="btn au-submit" type="submit" id="siBtn">Sign in</button>
+        </form>
+        <p class="au-fine">New to Atlas? <button type="button" class="au-linkbtn" data-switch="signup">Create an account</button></p>
+      </section>
+
+      <section class="au-pane" id="view-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
+        <h2>Create your workspace</h2><p class="au-lede">One account for research, the Playground, AtlasBench, workflows and routing.</p>
+        <form id="signupForm" novalidate>
+          <div class="au-field"><label for="suName">Name</label><div class="au-input"><input class="input" id="suName" name="suName" type="text" autocomplete="name" placeholder="Your name" aria-describedby="suNameErr suNameHint" required></div><div id="suNameHint" hidden></div><div class="au-err" id="suNameErr" role="alert"></div></div>
+          <div class="au-field"><label for="suEmail">Email address</label><div class="au-input"><input class="input" id="suEmail" name="suEmail" type="email" autocomplete="username" placeholder="you@domain.com" aria-describedby="suEmailErr suEmailHint" required></div><div id="suEmailHint" hidden></div><div class="au-err" id="suEmailErr" role="alert"></div></div>
+          <div class="au-field"><label for="suPassword">Password</label><div class="au-input has-toggle"><input class="input" id="suPassword" name="suPassword" type="password" autocomplete="new-password" placeholder="8 to 128 characters" aria-describedby="suPasswordErr suPasswordHint" required><button type="button" class="au-toggle" data-pw="suPassword" aria-label="Show password">Show</button></div><div class="au-hint" id="suPasswordHint">Use at least 8 characters.</div><div class="au-err" id="suPasswordErr" role="alert"></div></div>
+          <div class="au-meter" id="suMeter" aria-hidden="true"><i></i></div>
+          <div class="au-field"><label for="suConfirm">Confirm password</label><div class="au-input has-toggle"><input class="input" id="suConfirm" name="suConfirm" type="password" autocomplete="new-password" placeholder="Re-enter your password" aria-describedby="suConfirmErr suConfirmHint" required><button type="button" class="au-toggle" data-pw="suConfirm" aria-label="Show password">Show</button></div><div id="suConfirmHint" hidden></div><div class="au-err" id="suConfirmErr" role="alert"></div></div>
+          <div class="au-err" id="suFormErr" role="alert" style="margin-top:14px"></div>
+          <button class="btn au-submit" type="submit" id="suBtn">Create account</button>
+        </form>
+        <p class="au-fine">By creating an account you agree to the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a>.<br>Already registered? <button type="button" class="au-linkbtn" data-switch="signin">Sign in</button></p>
+      </section>
+
+      <section class="au-pane" id="view-forgot" role="region" aria-labelledby="forgotH" hidden>
+        <h2 id="forgotH">Reset your password</h2><p class="au-lede">Enter the email on your account.</p>
+        <form id="forgotForm" novalidate>
+          <div class="au-field"><label for="fpEmail">Email address</label><div class="au-input"><input class="input" id="fpEmail" name="fpEmail" type="email" autocomplete="username" placeholder="you@domain.com" aria-describedby="fpEmailErr fpEmailHint" required></div><div id="fpEmailHint" hidden></div><div class="au-err" id="fpEmailErr" role="alert"></div></div>
+          <div class="au-err" id="fpFormErr" role="alert" style="margin-top:14px"></div>
+          <button class="btn au-submit" type="submit" id="fpBtn">Request reset link</button>
+        </form>
+        <div id="fpDone" hidden>
+          <p class="au-banner good" id="fpDoneMsg"></p>
+          <p class="au-hint" style="margin-top:12px">Password-reset email depends on the person running this deployment having set up email delivery. If nothing arrives, ask them to reset it for you.</p>
+          <button class="btn au-submit" type="button" id="fpDev" hidden>Continue to set a new password</button>
+        </div>
+        <p class="au-fine"><button type="button" class="au-linkbtn" data-switch="signin">Back to sign in</button></p>
+      </section>
+
+      <section class="au-pane" id="view-reset" role="region" aria-labelledby="resetH" hidden>
+        <h2 id="resetH">Set a new password</h2><p class="au-lede">Choose a new password for your Atlas account. Reset links expire.</p>
+        <form id="resetForm" novalidate>
+          <div class="au-field"><label for="rpPassword">New password</label><div class="au-input has-toggle"><input class="input" id="rpPassword" name="rpPassword" type="password" autocomplete="new-password" placeholder="8 to 128 characters" aria-describedby="rpPasswordErr rpPasswordHint" required><button type="button" class="au-toggle" data-pw="rpPassword" aria-label="Show password">Show</button></div><div id="rpPasswordHint" hidden></div><div class="au-err" id="rpPasswordErr" role="alert"></div></div>
+          <div class="au-field"><label for="rpConfirm">Confirm new password</label><div class="au-input has-toggle"><input class="input" id="rpConfirm" name="rpConfirm" type="password" autocomplete="new-password" placeholder="Re-enter your password" aria-describedby="rpConfirmErr rpConfirmHint" required><button type="button" class="au-toggle" data-pw="rpConfirm" aria-label="Show password">Show</button></div><div id="rpConfirmHint" hidden></div><div class="au-err" id="rpConfirmErr" role="alert"></div></div>
+          <div class="au-err" id="rpFormErr" role="alert" style="margin-top:14px"></div>
+          <button class="btn au-submit" type="submit" id="rpBtn">Save new password</button>
+        </form>
+        <p class="au-fine"><button type="button" class="au-linkbtn" data-switch="signin">Back to sign in</button></p>
+      </section>
+     </div>
+    </div>
+  </main>
+</div>
+<script src="js/config.js"></script><script src="js/auth-page.js"></script>
+</body></html>

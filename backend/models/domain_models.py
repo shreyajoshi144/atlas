@@ -20,7 +20,28 @@ class SearchResult(BaseSchema):
     snippet: str
     domain: str
     rank_position: int
+    published_date: Optional[date] = None
     source_type: SourceType = SourceType.SEARCH_RESULT
+
+    @field_validator("published_date", mode="before")
+    @classmethod
+    def parse_published_date(cls, value: Any) -> Optional[date]:
+        if value in (None, ""):
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        try:
+            text = str(value).strip()
+            if not text:
+                return None
+            try:
+                return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+            except ValueError:
+                return date.fromisoformat(text[:10])
+        except (TypeError, ValueError):
+            return None
 
 
 class RankedSource(BaseSchema):
@@ -74,6 +95,8 @@ class ScrapedContent(BaseSchema):
 
 class ClaimEvidence(BaseSchema):
     source_id: str
+    stance: str = "mixed"
+    publish_date: Optional[date] = None
     url: HttpUrl
     title: str
     evidence_text: str

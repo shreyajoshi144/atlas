@@ -4,9 +4,14 @@ import json
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
+from backend.auth.dependencies import get_current_user
+from backend.core.errors import safe_server_error
+from backend.core.logging import get_logger
+from backend.core.observability import serialize_public_trace
 from backend.database import ResearchRepository
+from backend.evaluation.models import EvaluationSummary
 from backend.models.response_models import (
     ApiResponse,
     ErrorResponse,
@@ -21,12 +26,37 @@ from backend.models.response_models import (
 )
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 ERROR_RESPONSES = {
     404: {"model": ErrorResponse, "description": "Resource not found"},
     422: {"description": "Validation error"},
     500: {"model": ErrorResponse, "description": "Internal server error"},
 }
+
+
+def _load_research_trace(repository: ResearchRepository, session_id: str, user_id: str) -> list[dict[str, Any]]:
+    """Return the sanitised persisted research trace for a report's session.
+
+    Ownership is enforced by ``get_events_for_session`` (it joins on the
+    session's user_id). Trace retrieval is best-effort: a missing or malformed
+    trace must never prevent the report itself from being returned.
+    """
+    if not session_id:
+        return []
+    try:
+        events = repository.analytics.get_events_for_session(session_id, user_id)
+        for event in reversed(events):
+            if event.get("event_type") != "agentic_trace":
+                continue
+            payload = json.loads(event.get("payload_json") or "{}")
+            trace = payload.get("trace")
+            if isinstance(trace, list):
+                return serialize_public_trace(trace)
+        return []
+    except Exception as exc:  # trace is auxiliary — never fail the report fetch
+        logger.warning("Loading research trace failed (non-fatal)", extra={"error": str(exc), "session_id": session_id})
+        return []
 
 
 def _normalise_score(score: float | None) -> float | None:
@@ -89,6 +119,18 @@ def _build_executive_brief_resp(brief_json: str | None) -> ExecutiveBriefRespons
         return None
 
 
+def _build_evaluation_resp(evaluation_row: dict[str, Any] | None) -> EvaluationSummary | None:
+    """Reconstructs the stored EvaluationSummary from its persisted
+    details_json. Never raises — a malformed/missing row just means no
+    evaluation is shown, exactly like a report with no verification pass."""
+    if not evaluation_row or not evaluation_row.get("details_json"):
+        return None
+    try:
+        return EvaluationSummary.model_validate_json(evaluation_row["details_json"])
+    except Exception:
+        return None
+
+
 @router.get(
     "/reports",
     response_model=ApiResponse[HistoryReportsResponse],
@@ -98,11 +140,13 @@ async def list_reports(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
     topic: Annotated[str | None, Query(max_length=300)] = None,
+    current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[HistoryReportsResponse]:
     try:
         repository = ResearchRepository()
-        rows = repository.reports.list_reports(limit=limit, offset=offset, topic=topic)
-        total = repository.reports.count_reports(topic=topic)
+        user_id = current_user["user_id"]
+        rows = repository.reports.list_reports(limit=limit, offset=offset, topic=topic, user_id=user_id)
+        total = repository.reports.count_reports(topic=topic, user_id=user_id)
 
         reports = []
         for row in rows:
@@ -133,7 +177,7 @@ async def list_reports(
             ),
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to list reports: {exc}") from exc
+        raise safe_server_error(logger, "Listing reports", exc) from exc
 
 
 @router.get(
@@ -143,10 +187,11 @@ async def list_reports(
 )
 async def get_report(
     report_id: Annotated[str, Path(min_length=3, max_length=120)],
+    current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[ReportDetailResponse]:
     try:
         repository = ResearchRepository()
-        row = repository.reports.get_report(report_id=report_id)
+        row = repository.reports.get_report(report_id=report_id, user_id=current_user["user_id"])
         if not row:
             raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
 
@@ -207,12 +252,16 @@ async def get_report(
             for s in source_rows
         ]
 
+        evaluation_row = repository.evaluations.get_latest_by_report_id(report_id, user_id=current_user["user_id"])
+        evaluation_resp = _build_evaluation_resp(evaluation_row)
+        research_trace = _load_research_trace(repository, row.get("session_id", ""), current_user["user_id"])
+
         return ApiResponse(
             success=True,
             message="Report retrieved",
-            data=ReportDetailResponse(report=report_resp, sources=sources_resp),
+            data=ReportDetailResponse(report=report_resp, sources=sources_resp, evaluation=evaluation_resp, research_trace=research_trace),
         )
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to get report: {exc}") from exc
+        raise safe_server_error(logger, "Fetching report", exc) from exc

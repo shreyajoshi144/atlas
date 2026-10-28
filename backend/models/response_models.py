@@ -3,7 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# Reused directly as the API's evaluation schema (see EvaluationSummary in
+# backend/evaluation/models.py) rather than duplicating an equivalent set of
+# response classes — the evaluation layer's output is already a plain,
+# JSON-safe pydantic model with no dependency on the graph/agents packages.
+from backend.evaluation.models import EvaluationSummary as EvaluationSummaryResponse
 
 T = TypeVar("T")
 
@@ -86,13 +92,50 @@ class ResearchReportResponse(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+class EvidenceBucketResponse(BaseModel):
+    count: int = 0
+    source_ids: list[str] = Field(default_factory=list)
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+
+class EvidenceConclusionResponse(BaseModel):
+    supported_by_source_count: int = 0
+    partially_supported_source_count: int = 0
+    contradicted_source_count: int = 0
+
+class ResearchInsightsResponse(BaseModel):
+    supporting: EvidenceBucketResponse
+    partially_supported: EvidenceBucketResponse
+    contradicted: EvidenceBucketResponse
+    mixed: EvidenceBucketResponse
+    gaps: list[dict[str, str]] = Field(default_factory=list)
+    conclusion: EvidenceConclusionResponse
+
 # ── Research run ──────────────────────────────────────────────────────────────
 
 class ResearchRunResponse(BaseModel):
+    insights: ResearchInsightsResponse | None = None
     session: ResearchSessionResponse
     report: ResearchReportResponse
     top_sources: list[SourceResponse]
     verification: VerificationSummaryResponse | None = None
+    # Echoes request.source_report_id back once ownership has been
+    # verified server-side — None if it wasn't provided, or if it didn't
+    # actually belong to the requesting user (silently dropped, not
+    # errored, since it's provenance metadata, not a required input).
+    source_report_id: str | None = None
+    verification_status: Literal["succeeded", "failed", "unavailable"] = "unavailable"
+    # Non-blocking pipeline evaluation (retrieval relevance, claim/evidence
+    # grounding, verification consistency, final-answer groundedness and
+    # citation correctness). None if evaluation could not be computed at
+    # all — this never indicates the research run itself failed.
+    evaluation: EvaluationSummaryResponse | None = None
+    # Additive observability for the controlled 1C–1E path; existing clients may ignore these fields.
+    agentic_status: str | None = None
+    agentic_verification_status: str | None = None
+    replan_count: int = 0
+    agentic_trace: list[dict[str, Any]] = Field(default_factory=list)
+    tool_trace: list[dict[str, Any]] = Field(default_factory=list)
+    research_trace: list[dict[str, Any]] = Field(default_factory=list)
 
 # ── Semantic search ───────────────────────────────────────────────────────────
 
@@ -125,12 +168,14 @@ class RetrievedChunkResponse(BaseModel):
 class ChatResponse(BaseModel):
     """
     Returned at data level from POST /api/chat/research.
-    Frontend reads: data.answer, data.messages, data.retrieved_chunks
+    Frontend reads: data.answer, data.messages, data.retrieved_chunks, data.suggested_questions
     """
     answer: str
     messages: list[ChatMessageResponse]
     retrieved_chunks: list[RetrievedChunkResponse]
     report_ids: list[str] = []
+    suggested_questions: list[str] = []
+
 
 # ── History ───────────────────────────────────────────────────────────────────
 
@@ -156,6 +201,14 @@ class HistoryReportsResponse(BaseModel):
 class ReportDetailResponse(BaseModel):
     report: ResearchReportResponse
     sources: list[SourceResponse]
+    evaluation: EvaluationSummaryResponse | None = None
+    # Additive observability for the controlled 1C–1E path; existing clients may ignore these fields.
+    agentic_status: str | None = None
+    agentic_verification_status: str | None = None
+    replan_count: int = 0
+    agentic_trace: list[dict[str, Any]] = Field(default_factory=list)
+    tool_trace: list[dict[str, Any]] = Field(default_factory=list)
+    research_trace: list[dict[str, Any]] = Field(default_factory=list)
 
 # ── Analytics ─────────────────────────────────────────────────────────────────
 
@@ -183,3 +236,53 @@ class KnowledgeBaseResponse(BaseModel):
 
 # Alias for backward-compatible imports
 ResearchChatResponse = ChatResponse
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+class UserResponse(BaseModel):
+    user_id: str
+    email: str
+    name: str
+    created_at: datetime
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class ForgotPasswordResponse(BaseModel):
+    # Populated only outside production, since no email provider is wired
+    # up yet — see backend/api/routes/auth.py. Always None in production;
+    # never logged (see the "safe logging" hardening in that same route).
+    dev_reset_token: str | None = None
+
+
+# ── Unanswered questions ─────────────────────────────────────────────────
+# Derived (never fabricated) from a report's existing verification claims
+# and sources — see backend/services/questions_service.py.
+class UnansweredQuestionResponse(BaseModel):
+    question_id: str
+    question_text: str
+    category: str
+    rationale: str
+    related_claim_id: str | None = None
+    related_source_ids: list[str] = Field(default_factory=list)
+
+
+class UnansweredQuestionsResponse(BaseModel):
+    report_id: str
+    topic: str
+    questions: list[UnansweredQuestionResponse]
+
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+# Plain, persistent student notes — one per (user, report). Deliberately
+# separate from ExecutiveBriefResponse/ResearchReportResponse above: those are
+# Atlas-generated; this is only ever what the student typed.
+
+class NoteResponse(BaseModel):
+    report_id: str
+    content: str
+    updated_at: datetime | None = None

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.auth.dependencies import get_current_user
+from backend.auth.rate_limit import rate_limit_by_user
+from backend.core.errors import safe_server_error
+from backend.core.logging import get_logger
 from backend.database import ResearchRepository
 from backend.memory import VectorMemoryService
 from backend.models.api_models import SemanticSearchRequest
@@ -13,6 +17,7 @@ from backend.models.response_models import (
 )
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 ERROR_RESPONSES = {
     400: {"model": ErrorResponse, "description": "Bad request"},
@@ -25,14 +30,20 @@ ERROR_RESPONSES = {
     "/semantic",
     response_model=ApiResponse[SemanticSearchResponse],
     responses=ERROR_RESPONSES,
+    dependencies=[Depends(rate_limit_by_user("semantic_search", limit=30, window_seconds=300))],
 )
-async def semantic_search(request: SemanticSearchRequest) -> ApiResponse[SemanticSearchResponse]:
+async def semantic_search(
+    request: SemanticSearchRequest,
+    current_user: dict = Depends(get_current_user),
+) -> ApiResponse[SemanticSearchResponse]:
     try:
+        user_id = current_user["user_id"]
         vector_memory = VectorMemoryService()
         repository = ResearchRepository()
 
         raw_results = vector_memory.search_similar(
             query=request.query,
+            user_id=user_id,
             limit=request.limit,
             topic=request.topic,
         )
@@ -51,7 +62,7 @@ async def semantic_search(request: SemanticSearchRequest) -> ApiResponse[Semanti
 
             summary = ""
             try:
-                row = repository.reports.get_report(report_id)
+                row = repository.reports.get_report(report_id, user_id=user_id)
                 if row:
                     summary = row.get("summary", "")
                     topic = row.get("topic", topic)
@@ -73,4 +84,4 @@ async def semantic_search(request: SemanticSearchRequest) -> ApiResponse[Semanti
             data=SemanticSearchResponse(results=results),
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Semantic search failed: {exc}") from exc
+        raise safe_server_error(logger, "Semantic search", exc) from exc

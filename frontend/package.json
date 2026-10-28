@@ -1,0 +1,9 @@
+{
+  "name": "atlas-frontend-checks",
+  "private": true,
+  "description": "Dev-only checks for the static Atlas frontend. The app itself has no build step. Tests use Python Playwright (pip install playwright; playwright install chromium).",
+  "scripts": {
+    "test": "python tests/e2e/test_frontend_e2e.py",
+    "mock": "python tests/e2e/mock_server.py"
+  }
+}

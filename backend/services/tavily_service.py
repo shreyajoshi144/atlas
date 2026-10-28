@@ -13,20 +13,31 @@ class TavilySearchService:
         self.settings = settings
         self.client = TavilyClient(api_key=settings.tavily_api_key)
 
-    def search(self, query: str, max_results: int | None = None) -> list[SearchResult]:
+    def search(
+        self,
+        query: str,
+        max_results: int | None = None,
+        *,
+        time_range: str | None = None,
+    ) -> list[SearchResult]:
         limit = max_results or self.settings.tavily_max_results
         logger.info(
             "Starting Tavily search",
-            extra={"query": query, "max_results": limit},
+            extra={"query_length": len(query), "max_results": limit},
         )
 
-        response = self.client.search(
-            query=query,
-            max_results=limit,
-            search_depth="advanced",
-            include_answer=False,
-            include_raw_content=False,
-        )
+        search_kwargs = {
+            "query": query,
+            "max_results": limit,
+            "search_depth": "advanced",
+            "include_answer": False,
+            "include_raw_content": False,
+        }
+        if time_range:
+            search_kwargs["time_range"] = time_range
+
+        search_kwargs["timeout"] = float(self.settings.request_timeout_seconds)
+        response = self.client.search(**search_kwargs)
 
         results: list[SearchResult] = []
         for idx, item in enumerate(response.get("results", []), start=1):
@@ -42,12 +53,13 @@ class TavilySearchService:
                     snippet=item.get("content", "").strip(),
                     domain=domain,
                     rank_position=idx,
+                    published_date=item.get("published_date"),
                 )
             )
 
         logger.info(
             "Completed Tavily search",
-            extra={"query": query, "result_count": len(results)},
+            extra={"query_length": len(query), "result_count": len(results)},
         )
         return results
 

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Workspace</title>
+<meta name="robots" content="noindex" /><meta name="theme-color" content="#F2EADF" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%237A6270' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Cpath d='M32 8 C40 20 40 30 32 34 C24 30 24 20 32 8Z' fill='%23C8999C'/%3E%3C/svg%3E" />
+<script>
+/* Early guard: no stored session -> sign-in page before anything paints. Emailed reset links are forwarded too. */
+(function () {
+  try {
+    var q = location.search.match(/[?&]reset_token=([^&]+)/);
+    if (q) { location.replace('auth.html?reset_token=' + q[1]); return; }
+    var back = localStorage.getItem('atlas_remember') === '0' ? sessionStorage : localStorage;
+    var s = JSON.parse(back.getItem('atlas_auth') || 'null');
+    if (!s || !s.token) location.replace('auth.html?mode=signin' + (location.hash.length > 2 ? '&next=' + encodeURIComponent(location.hash) : ''));
+  } catch (e) { location.replace('auth.html'); }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/atlas.css">
+</head>
+<body class="ws">
+<div class="ws-bg" aria-hidden="true"></div>
+<div id="toastHost" role="status" aria-live="polite"></div>
+
+<div class="modal-overlay" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+  <div class="modal-box">
+    <div class="modal-title" id="logoutTitle">Sign out?</div>
+    <div class="modal-desc">You will need to sign in again to reach your research, conversations and workflows.</div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeLogoutModal()">Cancel</button><button class="btn btn-danger" onclick="confirmLogout()">Sign out</button></div>
+  </div>
+</div>
+
+<div class="app auth-locked" id="appRoot">
+  <aside class="rail" aria-label="Atlas">
+    <a class="brand" href="index.html" aria-label="Atlas home"><span class="brand-mark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M32 10 C41 21 41 31 32 36 C23 31 23 21 32 10Z" fill="currentColor" fill-opacity=".25"/><path d="M32 36 V54 M32 46 C26 44 22 40 21 36 M32 44 C38 42 42 38 43 34"/></svg></span><span class="brand-name">Atlas</span></a>
+    <nav class="areas" id="topNav" aria-label="Atlas areas"><button type="button" class="area topnav-item" data-nav="home">Overview</button><button type="button" class="area topnav-item" data-nav="research">Research</button><button type="button" class="area topnav-item" data-nav="playground">AI Playground</button><button type="button" class="area topnav-item" data-nav="compare">Compare</button><button type="button" class="area topnav-item" data-nav="atlasbench">AtlasBench</button><button type="button" class="area topnav-item" data-nav="workflowStudio">Workflow Studio</button><button type="button" class="area topnav-item" data-nav="runtime">Runtime &amp; Control</button></nav>
+    <div class="rail-foot">
+      <button class="rail-link" id="searchToggle" aria-label="Search research" title="Search (Ctrl/⌘ K)"><span>Search research</span><span class="kbd">⌘K</span></button>
+      <span class="status-pill"><span class="led" id="statusLed"></span><span id="statusText">Checking…</span></span>
+      <div class="account-menu-wrap">
+        <div class="account-trigger" id="accountTrigger" role="button" tabindex="0" aria-label="Account menu" aria-haspopup="true"><span class="avatar" id="accountAvatar">A</span><span class="account-who"><span class="account-name" id="accountName">—</span><span class="account-email" id="accountEmail">—</span></span></div>
+        <div class="account-dropdown" id="accountDropdown">
+          <div class="account-dropdown-item" id="settingsMenuItem" role="button" tabindex="0">Settings</div>
+          <div class="account-dropdown-item danger" id="logoutMenuItem" role="button" tabindex="0">Sign out</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <div class="sheet">
+      <header class="sheet-top">
+        <button class="btn-icon menu-btn" id="mobileNavToggle" aria-label="Open navigation" aria-controls="mobileNavDrawer">Menu</button>
+        <a class="brand brand-m" href="index.html" aria-label="Atlas home"><span class="brand-name">Atlas</span></a>
+        <nav class="subbar" id="subnav" aria-label="Research sections"></nav>
+        <span class="sheet-case" id="statusBarCase"></span>
+        <div class="searchpop" id="searchBar" style="display:none"><input id="globalSearch" placeholder="Search your research by meaning…" aria-label="Search research" /><span class="kbd">Esc</span></div>
+      </header>
+      <div class="work">
+        <main class="main" id="mainView" tabindex="-1"></main>
+        <aside class="context" id="contextPanel" aria-label="Case context"></aside>
+      </div>
+      <footer class="statusbar"><span id="statusBarLeft">Atlas</span><span id="statusBarRight"></span></footer>
+    </div>
+  </div>
+</div>
+
+<div class="drawer" id="mobileNavDrawer"><div class="drawer-backdrop" id="mobileNavBackdrop"></div>
+  <div class="drawer-panel"><div class="drawer-head"><span class="brand-name">Atlas</span><button class="btn-icon" id="mobileNavClose" aria-label="Close navigation">Close</button></div>
+  <div class="drawer-group">Workspace</div><button type="button" class="drawer-item mobile-nav-item" data-nav="home">Overview</button><button type="button" class="drawer-item mobile-nav-item" data-nav="research">Research</button><button type="button" class="drawer-item sub mobile-nav-item" data-nav="history">Cases</button><button type="button" class="drawer-item sub mobile-nav-item" data-nav="kb">Library</button><button type="button" class="drawer-item sub mobile-nav-item" data-nav="search">Discover</button><button type="button" class="drawer-item sub mobile-nav-item" data-nav="knowledge">Knowledge map</button><button type="button" class="drawer-item sub mobile-nav-item" data-nav="analytics">Insights</button><div class="drawer-group">Product areas</div><button type="button" class="drawer-item mobile-nav-item" data-nav="playground">AI Playground</button><button type="button" class="drawer-item mobile-nav-item" data-nav="compare">Compare</button><button type="button" class="drawer-item mobile-nav-item" data-nav="atlasbench">AtlasBench</button><button type="button" class="drawer-item mobile-nav-item" data-nav="workflowStudio">Workflow Studio</button><button type="button" class="drawer-item mobile-nav-item" data-nav="runtime">Runtime &amp; Control</button><div class="drawer-group">Account</div><button type="button" class="drawer-item mobile-nav-item" data-nav="settings">Settings</button></div></div>
+
+<!-- Floating Ask Atlas widget: a direct child of <body> so position:fixed resolves against the viewport. IDs are the contract script.js binds to. -->
+<div class="chat-fab-wrap" id="chatFabWrap">
+  <div class="chat-fab-panel" id="chatFabPanel">
+    <div class="chat-fab-head">
+      <div class="chat-fab-head-title"><span class="chat-fab-dot"></span><div><div class="chat-fab-name">Ask Atlas</div><div class="chat-fab-sub">Grounded in your research</div></div></div>
+      <button class="btn-icon" id="chatFabClose" aria-label="Close Atlas AI">Close</button>
+    </div>
+    <div class="chat-fab-scope">
+      <input class="input" id="cTopic" aria-label="Research topic for context" placeholder="Research topic for context (optional)" maxlength="300" />
+      <div class="flex gap-10" style="margin-top:8px;align-items:center;">
+        <span class="small muted">Passages</span>
+        <input class="input" id="cTopK" aria-label="Passages to retrieve" type="range" min="1" max="10" value="4" style="padding:0;flex:1;">
+        <span class="small" id="cTopKVal" style="font-family:var(--mono);">4</span>
+        <span class="small muted" id="chatCounter" style="font-family:var(--mono);"></span>
+      </div>
+    </div>
+    <div class="chat-fab-messages" id="chatMessages"></div>
+    <div class="chat-fab-input-row">
+      <input class="input" id="chatInput" placeholder="Ask about your research…" maxlength="2000" aria-label="Message" />
+      <button class="btn chat-fab-send" id="chatSendBtn" onclick="sendChat()" aria-label="Send" title="Send">Send</button>
+      <button class="btn-icon" onclick="clearChat()" aria-label="Clear conversation" title="Clear conversation">Clear</button>
+    </div>
+  </div>
+  <button class="chat-fab" id="chatFabToggle" aria-label="Open Atlas AI" aria-expanded="false" title="Ask Atlas">
+    <span class="chat-fab-icon-open">?</span><span class="chat-fab-icon-close">×</span>
+  </button>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/script.js"></script>
+<script src="js/playground.js"></script>
+<script src="js/compare.js"></script>
+<script src="js/knowledge.js"></script>
+<script src="js/atlasbench.js"></script>
+<script src="js/workflow-studio.js"></script>
+<script src="js/routing.js"></script>
+</body>
+</html>

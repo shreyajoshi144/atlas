@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import re
 import ssl
 from datetime import date, datetime
@@ -16,6 +17,7 @@ from bs4 import BeautifulSoup
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
 from backend.models.domain_models import RankedSource, ScrapedContent
+from backend.services.ssrf_guard import SSRFBlockedError, safe_get
 
 logger = get_logger(__name__)
 
@@ -94,6 +96,27 @@ class AsyncScrapingService:
                     return result
 
                 last_error = result.error_message
+            except SSRFBlockedError as exc:
+                # Not worth retrying — the destination is blocked regardless
+                # of attempt count, and this is worth its own log line
+                # rather than folding into the generic "scrape failed" path.
+                logger.warning(
+                    "Blocked potentially unsafe scrape target",
+                    extra={"domain": source.domain, "reason": "blocked scrape target"},
+                )
+                return ScrapedContent(
+                    source_id=source.source_id,
+                    url=str(source.url),
+                    title=source.title,
+                    domain=source.domain,
+                    publish_date=source.publish_date,
+                    content="",
+                    content_hash="",
+                    success=False,
+                    http_status=None,
+                    error_message="Blocked: URL resolves to a disallowed network destination",
+                    content_length=0,
+                )
             except asyncio.TimeoutError:
                 last_error = f"Timeout after {self.settings.scrape_timeout_seconds}s"
             except aiohttp.ClientError as exc:
@@ -104,7 +127,7 @@ class AsyncScrapingService:
             logger.warning(
                 "Scrape attempt failed",
                 extra={
-                    "url": str(source.url),
+                    "domain": source.domain,
                     "attempt": attempt + 1,
                     "max_attempts": self.max_retries + 1,
                     "error": last_error,
@@ -133,7 +156,7 @@ class AsyncScrapingService:
         session: aiohttp.ClientSession,
         source: RankedSource,
     ) -> ScrapedContent:
-        async with session.get(str(source.url), allow_redirects=True) as response:
+        async with safe_get(session, str(source.url), max_redirects=5) as response:
             status = response.status
             html = await response.text(errors="ignore")
 
@@ -185,6 +208,7 @@ class AsyncScrapingService:
         fallback_publish_date: Optional[date],
     ) -> dict:
         soup = BeautifulSoup(html, "lxml")
+        publish_date = self._extract_publish_date(soup, headers, fallback_publish_date)
 
         for tag in soup(
             [
@@ -203,7 +227,6 @@ class AsyncScrapingService:
             tag.decompose()
 
         title = self._extract_title(soup, fallback_title)
-        publish_date = self._extract_publish_date(soup, headers, fallback_publish_date)
         domain = self._extract_domain(url) or fallback_domain
         content = self._extract_main_text(soup)
         content = self._normalize_whitespace(content)[: self.max_chars]
@@ -239,13 +262,14 @@ class AsyncScrapingService:
         headers: aiohttp.typedefs.LooseHeaders,
         fallback_publish_date: Optional[date],
     ) -> Optional[date]:
+        # Prefer explicit publication metadata. Tavily's date is passed as the
+        # fallback and therefore remains authoritative when it is already known.
         meta_candidates = [
             ("meta", {"property": "article:published_time"}, "content"),
             ("meta", {"name": "publish_date"}, "content"),
             ("meta", {"name": "pubdate"}, "content"),
-            ("meta", {"name": "date"}, "content"),
             ("meta", {"itemprop": "datePublished"}, "content"),
-            ("time", {"datetime": True}, "datetime"),
+            ("time", {"itemprop": "datePublished"}, "datetime"),
         ]
 
         for tag_name, attrs, value_attr in meta_candidates:
@@ -253,16 +277,39 @@ class AsyncScrapingService:
             if tag and tag.get(value_attr):
                 parsed = self._parse_date_string(tag.get(value_attr))
                 if parsed:
-                    return parsed
+                    return fallback_publish_date or parsed
 
-        last_modified = headers.get("Last-Modified")
-        if last_modified:
+        # Conservative JSON-LD fallback. Only datePublished is accepted; no
+        # arbitrary page text or dateModified is treated as publication time.
+        for script in soup.find_all("script", attrs={"type": "application/ld+json"}):
+            raw = script.string or script.get_text()
+            if not raw or not raw.strip():
+                continue
             try:
-                return parsedate_to_datetime(last_modified).date()
-            except Exception:
-                pass
+                payload = json.loads(raw)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+
+            for node in self._iter_jsonld_nodes(payload):
+                value = node.get("datePublished") if isinstance(node, dict) else None
+                parsed = self._parse_date_string(value)
+                if parsed:
+                    return fallback_publish_date or parsed
 
         return fallback_publish_date
+
+    @staticmethod
+    def _iter_jsonld_nodes(payload) -> Iterable[dict]:
+        if isinstance(payload, dict):
+            yield payload
+            graph = payload.get("@graph")
+            if isinstance(graph, list):
+                for item in graph:
+                    if isinstance(item, dict):
+                        yield item
+        elif isinstance(payload, list):
+            for item in payload:
+                yield from AsyncScrapingService._iter_jsonld_nodes(item)
 
     def _extract_main_text(self, soup: BeautifulSoup) -> str:
         selectors = [

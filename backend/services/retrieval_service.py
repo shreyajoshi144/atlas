@@ -21,8 +21,10 @@ class RetrievalService:
         self,
         query: str,
         top_k: int = 5,
+        research_mode: str = "explore",
     ) -> tuple[list[SearchResult], list[RankedSource]]:
-        search_results = self.tavily_service.search(query=query, max_results=max(top_k * 2, 10))
+        pool_size = max(top_k * 2, 10)
+        search_results = self._search_for_mode(query, pool_size, research_mode)
 
         # Cast HttpUrl → str at the boundary so ranking_service (which uses
         # str operations like .encode() and urlparse) never sees a HttpUrl object.
@@ -31,14 +33,16 @@ class RetrievalService:
                 title=r.title,
                 url=str(r.url),
                 snippet=r.snippet,
-                publish_date=None,
+                publish_date=r.published_date,
             )
             for r in search_results
         ]
 
+        freshness_weight = 0.0 if (research_mode or "explore").lower() == "literature_review" else 0.20
         ranked_results = self.ranking_service.rank_sources(
             query=query,
             sources=retrieved_sources,
+            freshness_weight=freshness_weight,
         )
 
         ranked_sources = [
@@ -48,7 +52,7 @@ class RetrievalService:
                 url=str(r.url),   # str() cast keeps Pydantic v2 HttpUrl happy
                 domain=r.domain,
                 snippet=r.snippet,
-                publish_date=None,
+                publish_date=r.publish_date,
                 bm25_score=r.bm25_score,
                 cosine_score=r.cosine_score,
                 fuzz_score=r.fuzz_score,
@@ -69,3 +73,46 @@ class RetrievalService:
             },
         )
         return search_results, ranked_sources
+
+    def _search_for_mode(self, query: str, pool_size: int, research_mode: str) -> list[SearchResult]:
+        """Use Tavily recency filters as a retrieval preference, not a hard global cutoff.
+
+        Recent results are fetched for modes where freshness matters, then a normal
+        unfiltered search is merged in so authoritative/foundational sources remain
+        eligible. Literature review intentionally uses only the unfiltered search.
+        """
+        mode = (research_mode or "explore").strip().lower()
+        if mode == "literature_review":
+            return self.tavily_service.search(query=query, max_results=pool_size)
+
+        time_range_by_mode = {
+            "explore": "year",
+            "compare": "month",
+            "investigate": "month",
+            "brief": "month",
+        }
+        recent_window = time_range_by_mode.get(mode)
+        if not recent_window:
+            return self.tavily_service.search(query=query, max_results=pool_size)
+
+        recent_limit = max(1, pool_size // 2)
+        recent = self.tavily_service.search(
+            query=query,
+            max_results=recent_limit,
+            time_range=recent_window,
+        )
+        broad = self.tavily_service.search(query=query, max_results=pool_size)
+
+        merged: list[SearchResult] = []
+        seen: set[str] = set()
+        for result in [*recent, *broad]:
+            key = str(result.url).rstrip("/").lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            merged.append(result)
+            if len(merged) >= pool_size:
+                break
+
+        return merged
+

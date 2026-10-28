@@ -59,6 +59,7 @@ class EventType(str, Enum):
     MEMORY_SAVED = "memory_saved"
     CHAT_COMPLETED = "chat_completed"
     ERROR = "error"
+    AGENTIC_TRACE = "agentic_trace"
 
 
 class ChatRole(str, Enum):

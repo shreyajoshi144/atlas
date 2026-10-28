@@ -1,223 +1,291 @@
-# Atlas AI
+# Atlas
 
-Atlas is a FastAPI research application with a static frontend. This repository
-contains the M1–M9 research, retrieval, Knowledge Map, Challenge, AtlasBench,
-and routing features, plus M10 benchmark-output arbitration, M11 operations,
-and the AI Playground for explicit multi-model comparisons.
-AtlasBench arbitration compares only completed outputs scored against the same
-frozen benchmark task and evidence. It does not score arbitrary Playground
-questions against benchmark gold data or call an LLM judge.
+**Research you can trace. AI you can measure.**
 
-The authenticated Playground can compare up to three manually selected,
-allowlisted Groq models against the same question and retrieved evidence. It
-can use the signed-in user's indexed research library and optional Tavily web
-search, shows source IDs and provider-derived usage estimates, and stores
-conversation history per account. Explicit Playground selections apply only to
-that comparison; saved M9 routing policy remains in effect elsewhere, and
-fallback is disabled for these side-by-side calls.
-
-## Compare: OpenAI, Anthropic, Google Gemini and xAI Grok (new)
-
-The **Compare** area (top bar → *Compare*, API under `/api/compare`) sends one question to up to four
-models from four providers using their real APIs, and shows each answer with its sources, citations,
-token usage, estimated cost, measured latency and any failures/retries. It never ranks models on
-opinion: quality can only be ranked from measured evaluation results (see *Evaluation* below), and the UI says
-plainly when none exist. The existing Playground, AtlasBench, routing, Workflow Studio and Meadow UI are unchanged.
-
-**Setup.** Add the keys you have to `.env` (a provider with no key is simply shown as not configured):
+Atlas is a research workspace that keeps the process alongside the result. You ask a question and Atlas finds and ranks sources, builds an evidence set, checks claims against it, and writes a structured report. Every claim stays linked to the source it came from. Atlas also gives you tools to test the models behind that research: side-by-side comparison across four providers, a reproducible benchmark, and cost-aware model routing. It ranks models only on measured results, never on opinion.
 
 ```
-OPENAI_API_KEY=...      # also used for embeddings; "dummy"/placeholder values count as not configured
-ANTHROPIC_API_KEY=...
-GEMINI_API_KEY=...      # GOOGLE_API_KEY also works
-XAI_API_KEY=...
+Question → Sources → Evidence → Verification → Report → Knowledge
 ```
 
-`GROQ_API_KEY` and `TAVILY_API_KEY` are still required by the original research pipeline (use placeholders
-if you only want Compare; research runs will then fail at call time). Keys stay on the server, are never
-returned by any endpoint and are scrubbed from logs. Then `pip install -r requirements.txt` and `python start.py`.
-Optional tuning variables are listed in `.env.example` (per-request cost ceiling, timeouts, retries, retention).
+Built with FastAPI, LangGraph, SQLite, ChromaDB and a dependency-free static frontend.
 
-**Model IDs and prices change often.** `backend/providers/catalog.json` holds the IDs and list prices, each with a
-source URL and the date they were verified (2026-10-20). The UI shows a staleness warning after 60 days. As an
-admin (`users.role='admin'`, see `backend/ops/README.md`) call `POST /api/compare/admin/discover` to check the
-catalog against what your keys can actually use; models a key cannot use are blocked with a clear message.
-Costs are estimates from catalog prices (or provider-reported cost where given), never invoices.
+---
 
-**Evaluation (the only basis for "which is better").** `python -m backend.providers.eval_cli --models
-openai:gpt-6.1-sol,anthropic:claude-sonnet-5-5 --max-usd 2` runs a 24-case grounding/abstention/injection/structured-output
-dataset against the real APIs (add `--dry-run` to see the worst-case cost first) and stores results that the
-Compare page then shows with confidence intervals. Nothing ships pre-computed. Small samples usually cannot
-separate models; the page only claims a ranking when intervals do not overlap.
+## Contents
 
-**Tests.** `python -m unittest discover -s backend/providers/tests -t .` (121 tests; runs on the standard library
-against a local fake provider server and a real SQLite file), `node backend/tests/js/compare_ui.test.js`, and
-`python frontend/tests/e2e/test_compare_e2e.py` (browser, mock API). See `COMPARE_UPGRADE_REPORT.md` for results and limits.
+- [Features](#features)
+- [How a research run works](#how-a-research-run-works)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [Comparing and evaluating models](#comparing-and-evaluating-models)
+- [Deployment](#deployment)
+- [Testing](#testing)
+- [Project layout](#project-layout)
+- [Security](#security)
+- [Project status](#project-status)
 
-## Requirements
+---
 
-- Python 3.11 or newer
-- Node.js for JavaScript syntax checks (optional for serving the app)
-- Groq and Tavily API credentials for live model and web-search operations
-- No Docker is required
+## Features
 
-## Local setup
+### Research
 
-From the repository root:
+| Feature | What it does |
+| --- | --- |
+| **Research pipeline** | A LangGraph workflow that plans, searches, scrapes, extracts evidence, verifies claims, writes the report, scores credibility and produces an executive brief. |
+| **Agentic planning** | Validated plans run over a closed tool registry, with bounded re-planning when verification fails. If planning fails, the run falls back to the fixed pipeline. |
+| **Source ranking** | Combines BM25, TF-IDF, cosine similarity and RapidFuzz signals. Relevance is scored separately from credibility (domain reputation, freshness, corroboration). |
+| **Claim verification** | Each claim is labelled *supporting*, *uncertain* or *conflicting* and stays linked to the evidence behind it. No single unexplained confidence score. |
+| **Hybrid retrieval** | Searches past research using BM25 and dense embeddings, merged with reciprocal-rank fusion, then reranked, with metadata filters. |
+| **Knowledge Map** | Extracts entities and claims into a per-user graph, with change tracking and source-freshness signals. |
+| **Challenge mode** | Runs deterministic adversarial queries that try to break a finding before you rely on it. |
+| **Notes, questions and chat** | Follow-up chat grounded in your stored research, plus notes and open questions attached to each case. |
+
+### Model evaluation and control
+
+| Feature | What it does |
+| --- | --- |
+| **Compare** | Sends one question to OpenAI, Anthropic, Google Gemini and xAI Grok models. Each answer shows its citations, token usage, estimated cost, latency, retries and failures. |
+| **Playground** | Compares up to three allowlisted Groq models side by side over your research library, with optional Tavily web search. |
+| **AtlasBench** | Reproducible benchmark runs on frozen tasks and gold evidence. Arbitration compares only completed outputs scored against the same task. There is no LLM judge. |
+| **Routing and Cost Autopilot** | Policy-based model selection with production fallback chains. It sits behind `core.llm`, so agent code doesn't change. |
+| **Budgets** | Per-user daily call limits and a monthly spend cap. Unknown model pricing is blocked when a cap is set. |
+| **Workflow Studio** | User-owned, deterministic text workflows with idempotent execution and saved run history. |
+| **Operations** | Admin endpoints for operational controls and monitoring. |
+
+---
+
+## How a research run works
+
+```mermaid
+flowchart TD
+    Q([Research question]) --> I[Initialize]
+    I --> P[Plan]
+    P --> X[Agentic execution]
+    X -->|plan succeeded| W
+    X -->|fallback| S[Search]
+    S --> SC[Scrape]
+    SC --> E[Extract evidence]
+    E --> V[Verify claims]
+    V --> W[Write report]
+    W --> C[Score credibility]
+    C --> B[Executive brief]
+    B --> F[Finalize and index]
+    F --> D([Research case])
+
+    S -.-> T[(Tavily)]
+    SC -.-> H[aiohttp + BeautifulSoup]
+    V -.-> L[(LLM)]
+    W -.-> L
+    B -.-> L
+```
+
+Deterministic code handles ranking and credibility. The LLM is used only where language understanding is required. When the report is finished, it's stored in SQLite as structured data and split into chunks in ChromaDB, so later searches can find it by meaning rather than exact wording.
+
+If the writer returns malformed or truncated structured output, Atlas makes one bounded recovery call that keeps the evidence intact. If that also fails, Atlas reports a clear error instead of guessing at the repair.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        UI["Static frontend<br/>HTML · CSS · vanilla JS"]
+    end
+
+    subgraph API["FastAPI · /api/*"]
+        AUTH[Auth]
+        RES[Research graph]
+        RET[Retrieval · Knowledge · Challenges]
+        EVAL[Compare · Playground · AtlasBench]
+        ROUTE[Routing · Budgets · Ops]
+        WF[Workflow Studio]
+    end
+
+    subgraph Storage
+        SQL[(SQLite)]
+        VEC[(ChromaDB)]
+    end
+
+    subgraph Providers
+        GROQ[Groq]
+        OAI[OpenAI]
+        ANT[Anthropic]
+        GEM[Gemini]
+        XAI[xAI]
+        TAV[Tavily]
+        EMB[sentence-transformers<br/>local]
+    end
+
+    UI <-->|JSON| API
+    RES --> ROUTE --> GROQ
+    EVAL --> OAI & ANT & GEM & XAI & GROQ
+    RES --> TAV
+    API --> SQL
+    RET --> VEC --> EMB
+```
+
+**Why two stores?** The data is accessed in two different ways. SQLite holds structured records such as users, sessions, reports, source scores, budgets and benchmark runs. ChromaDB holds embedded report chunks for semantic search. Neither duplicates the other.
+
+---
+
+## Quick start
+
+**Requirements:** Python 3.11+, plus API keys for [Groq](https://console.groq.com) and [Tavily](https://tavily.com). Node.js is optional and only needed for the frontend checks.
 
 ```sh
+git clone https://github.com/shreyajoshi144/atlas.git
+cd atlas
+
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
+
 cp .env.example .env
-```
+# edit .env: set GROQ_API_KEY, TAVILY_API_KEY and a random SECRET_KEY (32+ chars)
 
-Edit `.env` and replace the `GROQ_API_KEY`, `TAVILY_API_KEY`, and
-`SECRET_KEY` placeholders. The example values are not credentials. The default
-embedding model is local; `OPENAI_API_KEY` is optional. Start the app with:
-
-```sh
 python start.py
 ```
 
-`start.py` launches two local processes: the FastAPI backend on
-`http://127.0.0.1:8000` and Python's static file server on
-`http://127.0.0.1:5500`. Open the landing page at
-`http://127.0.0.1:5500/index.html`; sign in at `auth.html`; the workspace is
-`http://127.0.0.1:5500/app.html`. On localhost the frontend defaults to the
-backend at port 8000. For a separate deployed frontend/backend, set
-`window.ATLAS_API_BASE` in `frontend/js/config.js` to the API origin (with or
-without `/api`) and configure the backend's CORS origins accordingly.
-`/health` and `/ready` are backend endpoints on port 8000.
+`start.py` starts two processes:
+
+| Service | URL |
+| --- | --- |
+| Frontend | http://127.0.0.1:5500 (landing page) · `/auth.html` · `/app.html` |
+| API | http://127.0.0.1:8000 · health checks at `/health` and `/ready` · OpenAPI docs at `/docs` |
+
+On first start, Atlas creates the SQLite schema and applies additive migrations. Embeddings run locally by default, so `OPENAI_API_KEY` is optional.
+
+---
 
 ## Configuration
 
+All settings are read from `.env`. `.env.example` lists every option, and `backend/core/config.py` defines the full set.
+
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `GROQ_API_KEY` | Yes | Primary LLM provider |
-| `TAVILY_API_KEY` | Yes | Web search provider |
-| `SECRET_KEY` | Production | Random signing secret, at least 32 characters |
-| `APP_ENV` | No | `development`, `staging`, or `production` |
-| `CORS_ALLOWED_ORIGINS` | Production | Comma-separated exact deployed frontend origins |
-| `FRONTEND_BASE_URL` | No | Frontend URL used in account flows |
-| `OPENAI_API_KEY` | No | Optional embedding integration |
-| `DEFAULT_DAILY_LLM_CALL_LIMIT` | No | Default is 1000 budget events per user per UTC day; a routed fallback chain counts once, each selected Playground model counts once, and AtlasBench counts each guarded LLM invocation |
-| `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` | Production | Nonnegative USD default monthly cap; optional in development, required at production startup |
+| `GROQ_API_KEY` | Yes | Default LLM provider for the research pipeline and Playground |
+| `TAVILY_API_KEY` | Yes | Web search |
+| `SECRET_KEY` | Yes | Token signing secret, at least 32 random characters |
+| `APP_ENV` | No | `development` (default), `staging` or `production` |
+| `CORS_ALLOWED_ORIGINS` | Production | Comma-separated list of exact frontend origins, no wildcards |
+| `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` | Production | Monthly budget per user. Startup fails in production without it |
+| `DEFAULT_DAILY_LLM_CALL_LIMIT` | No | Daily LLM calls per user (default `1000`) |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `XAI_API_KEY` | No | Turns on that provider in Compare. Providers without a key show as not configured |
+| `ATLAS_DATA_DIR` | No | Base directory for the SQLite and Chroma data (default `./data`) |
+| `SQLITE_PATH` / `CHROMA_PATH` | No | Override the individual store locations |
+| `FRONTEND_BASE_URL` | No | Public frontend URL (default `http://localhost:5500`) |
 
-Storage paths, retrieval tuning, provider timeouts, and other supported
-settings are defined in `backend/core/config.py`. Unexpected server errors use
-a generic client response in every environment; structured logs retain exception
-type and sanitized stack locations but omit raw exception messages and request
-query strings, which can contain credentials or user content. Never commit `.env`
-or real provider credentials. In production set a unique random `SECRET_KEY`,
-`APP_ENV=production`, explicit non-wildcard `CORS_ALLOWED_ORIGINS`, and
-`DEFAULT_MONTHLY_LLM_SPEND_CAP_USD`; startup fails if the cap is omitted. The
-cap uses token-based price estimates and is not a guaranteed hard spend ceiling.
-Keep secrets in the deployment platform's secret store. Promote administrator accounts through a
-controlled database administration process; see [backend/ops/README.md](backend/ops/README.md).
+To run the frontend and API on different origins, set `window.ATLAS_API_BASE` in `frontend/js/config.js`.
 
-## Database and migrations
+---
 
-Atlas uses SQLite. The backend's startup lifespan calls
-`SQLiteManager.initialize_database()`, which creates
-the schema and applies additive compatibility migrations for existing
-databases. The default database and Chroma paths are under `backend/data`;
-set `SQLITE_PATH` and `CHROMA_PATH` in the process environment to use other
-locations. Back up the database before upgrades and verify the startup logs
-and `/ready` endpoint after migration. Fresh and legacy schema migration tests
-are included in the Python suite.
+## Comparing and evaluating models
 
-## Tests and checks
+**Compare** (`/api/compare`) calls the real provider APIs. Model IDs and list prices are stored in `backend/providers/catalog.json`, and each entry has a source URL and the date it was verified. The UI warns when the catalog is more than 60 days old. Admins can call `POST /api/compare/admin/discover` to check the catalog against the models their keys can actually use. Costs are estimates, not invoices.
 
-Run from the repository root with the virtual environment activated and project dependencies installed:
+**Evaluation** is the only basis Atlas uses to say one model is better than another:
 
 ```sh
-python -m pytest -q --tb=short
-for file in frontend/js/*.js; do node --check "$file"; done
-python -m compileall -q backend main.py start.py
-python -m pytest -q backend/tests/test_m10_m11.py::test_fresh_and_legacy_database_migrations_add_role_and_operational_tables --tb=short
-python -m pytest -q backend/tests/test_authorization_isolation.py --tb=short
+# preview worst-case spend first
+python -m backend.providers.eval_cli --models openai:gpt-6.1-sol,anthropic:claude-sonnet-5-5 --max-usd 2 --dry-run
+
+# run the 24-case grounding / abstention / prompt-injection / structured-output suite
+python -m backend.providers.eval_cli --models openai:gpt-6.1-sol,anthropic:claude-sonnet-5-5 --max-usd 2
 ```
 
-Node runs the repository's focused JavaScript UI suites. The Python suite includes offline provider stubs; passing it does not certify
-live provider credentials, quotas, or network access. Exercise real provider
-integrations separately in a controlled environment with valid credentials.
-Usage reservations count the serialized visible prompt representation with a
-prompt-size safety margin and add the configured maximum output allowance;
-they also use approximate model prices. Actual
-provider tokenization, hidden request overhead, price changes, and billed costs
-can exceed those estimates; a monthly spend cap is therefore a preventive
-budget control, not a guaranteed hard spend ceiling. Unknown model pricing is
-blocked when a spend cap is configured.
+The Compare page shows the results with confidence intervals. It reports a ranking only when those intervals don't overlap. No results ship pre-computed.
 
-## Updated local setup (Atlas)
+---
 
-1. Use Python 3.11+ and create/activate a virtual environment.
-2. Install dependencies: `pip install -r requirements.txt`.
-3. Copy `.env.example` to `.env` and set `GROQ_API_KEY`, `TAVILY_API_KEY`, and a strong random `SECRET_KEY` (at least 32 characters). Never commit `.env`.
-4. The default Groq model is `openai/gpt-oss-120b`. The interactive Playground no longer offers Groq's retired `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` IDs. Explicit stale selections are not silently rerouted.
-5. Start with `python start.py`; the frontend is served at `http://localhost:5500` and the API at `http://localhost:8000` (see startup output for exact endpoints).
+## Deployment
 
-Research report generation now allows a larger completion budget and makes one bounded, evidence-preserving recovery call when structured output is malformed or truncated. If recovery still fails, the app reports a clear actionable error rather than trying to guess-repair JSON.
+The `Dockerfile` builds a single-container image aimed at Hugging Face Spaces:
 
-## Batch 1 — Playground and Knowledge quality
-
-The Playground uses a light, high-contrast content surface distinct from Atlas's
-navy navigation chrome, with responsive model/source cards, visible keyboard
-focus, reduced-motion support, and explicit per-model states (complete, provider
-failure, timeout, and account limit). A failed model remains visible beside any
-successful model output; explicit model selection is not silently substituted.
-
-The conservative Knowledge extractor no longer promotes a standalone month
-name to a proper-noun entity, while retaining month words in multi-token names
-(e.g. an organization name) and retaining meaningful acronyms such as CAGR.
-Knowledge rows that use button semantics can also be activated with Enter or
-Space. Existing user-scoped IDs, evidence URL validation, provenance links, and
-persistence rules remain in place.
-
-Batch 1 verification: run `python -m pytest -q backend/tests/test_batch1_regressions.py`,
-`node backend/tests/js/knowledge_ui.test.js`, `node backend/tests/js/routing_ui.test.js`,
-`node backend/tests/js/atlasbench_ui.test.js`, `for file in frontend/js/*.js; do node --check "$file"; done`,
-and `python -m compileall -q backend main.py start.py`. Full API/integration and
-interactive-browser checks require the project's declared Python dependencies
-(in particular `langgraph` and `langchain-core`) and a browser runtime; the
-Batch 1 handoff records which checks were unavailable in the build environment.
-
-## Workflow Studio (minimal supported slice)
-
-The authenticated `/api/workflows` API and Workflow Studio UI support saving user-owned definitions from the built-in **Text cleanup** and **Text validation** templates, running deterministic text steps, inspecting step outcomes, and viewing persisted run history. Supported steps: `input_text`, `normalize_whitespace`, `append_text`, `uppercase`, and `require_contains`. Unknown steps are rejected server-side. Execution requests require an `Idempotency-Key` header; reusing the key with a different input returns HTTP 409. See `WORKFLOW_STUDIO_HANDOFF.md` for test results and environment limitations.
-
-## Frontend (Archive 09 redesign)
-
-Static files, no build step. Three separate surfaces:
-
-| Page | Purpose |
-|---|---|
-| `frontend/index.html` (+ `terms.html`, `privacy.html`, `contact.html`) | Public marketing site. No workspace code. |
-| `frontend/auth.html` | Sign in, sign up, forgot and reset password. Same endpoints and session storage as before. |
-| `frontend/app.html` | Authenticated workspace. Redirects to `auth.html` when there is no valid session. |
-
-`landing.html` remains as a redirect to `index.html` so old links keep working. Styles: `css/tokens.css` (palette tokens and shared
-primitives), `css/site.css` + `css/landing.css` (public pages), `css/atlas.css` (workspace). The palette is exactly five inks —
-`#F4EFE6`, `#FFFCF7`, `#302522`, `#78434A`, `#C9B9AD` — and every other tone is a `color-mix()` of those;
-`backend/tests/test_archive09_palette.py` fails on any other colour or on `backdrop-filter`.
-
-Set `window.ATLAS_CONTACT_EMAIL` in `frontend/js/config.js` to show a contact address on `contact.html`.
-Checks: `node backend/tests/js/<name>.test.js` (module tests) and `cd frontend && npm install && npm test` (jsdom smoke test, dev-only).
-
-
-## Frontend (meadow redesign)
-
-The static frontend was redesigned around the meadow-at-sunset photograph: `index.html` (landing),
-`auth.html` (sign in / sign up / password reset), `terms.html`, `privacy.html`, `contact.html` and the
-workspace `app.html`. No build step. Backend, APIs, routes and authentication are unchanged.
-See `FRONTEND_REDESIGN_REPORT.md` for what changed and exactly what was tested.
-
-Frontend checks (no real backend required):
+- CPU-only PyTorch, non-root user `uid 1000`, port `7860`
+- The embedding model is downloaded at build time
+- `deploy/space_app.py` serves the API and the static frontend from one origin, so CORS isn't needed
+- `deploy/seed_demo.py` creates an optional demo account when `DEMO_EMAIL` and `DEMO_PASSWORD` are set
 
 ```sh
-for f in frontend/js/*.js; do node --check $f; done     # syntax
-for f in backend/tests/js/*.test.js; do node $f; done   # pure-function UI tests
+docker build -t atlas .
+docker run -p 7860:7860 --env-file .env atlas
+```
+
+Production checklist: `APP_ENV=production`, a unique `SECRET_KEY`, explicit `CORS_ALLOWED_ORIGINS`, a monthly spend cap, and secrets kept in the platform's secret store. Promote admin accounts through the database, as described in [`backend/ops/README.md`](backend/ops/README.md).
+
+---
+
+## Testing
+
+```sh
+# Python suite: offline provider stubs, real SQLite
+python -m pytest -q
+
+# Provider / Compare suite (standard library only, local fake provider server)
+python -m unittest discover -s backend/providers/tests -t .
+
+# Frontend: syntax check and UI module tests
+for f in frontend/js/*.js; do node --check "$f"; done
+for f in backend/tests/js/*.test.js; do node "$f"; done
+
+# Browser end-to-end tests against a mock API
 pip install playwright && playwright install chromium
-python frontend/tests/e2e/test_frontend_e2e.py          # browser e2e against a mock API
+python frontend/tests/e2e/test_frontend_e2e.py
+python frontend/tests/e2e/test_compare_e2e.py
 ```
+
+The suite includes authorization isolation between users, migrations on fresh and legacy schemas, API security, routing and fallback, benchmark recovery, and palette and accessibility checks for the frontend. Passing these tests doesn't prove that live credentials, quotas or network access work; check those separately.
+
+---
+
+## Project layout
+
+```
+atlas/
+├── main.py                 FastAPI app, routers, exception handling
+├── start.py                Local launcher (API :8000 + static frontend :5500)
+├── backend/
+│   ├── api/routes/         HTTP endpoints, one module per area
+│   ├── graph/              LangGraph research workflow (state, nodes, edges)
+│   ├── agents/             Verification, writer and executive-brief agents
+│   ├── agentic/            Planner, tool registry, controlled execution
+│   ├── retrieval/          BM25, dense search, fusion, reranking, filters
+│   ├── knowledge/          Extraction, Knowledge Map, freshness, change tracking
+│   ├── challenges/         Adversarial challenge queries and classification
+│   ├── bench/              AtlasBench runner, scoring, arbitration, suites
+│   ├── evaluation/         Evaluation datasets and metrics
+│   ├── providers/          Compare: provider clients, catalog, eval CLI
+│   ├── routing/            Model routing, Cost Autopilot, fallback
+│   ├── playground/         Playground persistence
+│   ├── workflows/          Workflow Studio execution
+│   ├── ops/                Admin controls and monitoring
+│   ├── auth/               Password hashing and token signing
+│   ├── database/           SQLite schema, migrations, repositories
+│   └── tests/              pytest suites and JS UI tests
+├── frontend/               Static pages, CSS tokens, JS modules, e2e tests
+├── deploy/                 Single-origin app and Spaces startup
+└── docs/                   API contracts and release reports
+```
+
+---
+
+## Security
+
+- **Passwords** are hashed with Argon2. Existing PBKDF2 hashes still verify, so older accounts keep working.
+- **Sessions** use HMAC-SHA256 signed access tokens that expire. Every API area except auth requires a valid token.
+- **User data is isolated.** Research, notes, Playground history, workflows and benchmark runs are scoped to the signed-in user, and tests check this.
+- **Provider keys stay on the server.** No endpoint returns them, and they're scrubbed from logs.
+- **Errors don't leak.** Unexpected exceptions return the same generic message in every environment. Logs record the path, method and exception type only, never query strings, raw messages or credentials.
+- **Spend caps prevent overspending but aren't exact.** They use token-based estimates, so actual billed cost can be higher.
+
+---
+
+## Project status
+
+Atlas is a personal engineering project under active development. The offline test suites cover most of the system, but a full check against live providers and a real browser is still outstanding. See [`docs/FINAL_RELEASE_REPORT.md`](docs/FINAL_RELEASE_REPORT.md) for what has and hasn't been verified. Don't treat it as production-ready until that report says so.
+
+More detail is in [`docs/`](docs/), including the [Compare API contract](docs/COMPARE_API_CONTRACT.md), the [Workflow Studio handoff](docs/WORKFLOW_STUDIO_HANDOFF.md) and the per-batch release reports.

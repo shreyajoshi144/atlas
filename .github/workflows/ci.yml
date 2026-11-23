@@ -32,6 +32,11 @@ jobs:
           SECRET_KEY: ci-only-secret-key-not-used-anywhere-else-0123456789
       - name: Provider suite (stdlib only)
         run: python -m unittest discover -s backend/providers/tests -t .
+        env:
+          APP_ENV: development
+          SECRET_KEY: ci-only-secret-key-not-used-anywhere-else-0123456789
+          GROQ_API_KEY: test_key
+          TAVILY_API_KEY: test_key
 
   frontend:
     runs-on: ubuntu-latest

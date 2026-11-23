@@ -279,10 +279,11 @@ def real_graph_invoke(state):
         return run
 
     g = StateGraph(_S)
-    g.add_node("a", node("a"))
-    g.add_node("b", node("b"))
-    g.add_edge(START, "a"); g.add_edge(START, "b"); g.add_edge("a", END); g.add_edge("b", END)
-    out = g.compile().invoke({})
+    # Node names must not collide with state keys ("a"/"b"): LangGraph rejects that with a ValueError.
+    g.add_node("node_a", node("a"))
+    g.add_node("node_b", node("b"))
+    g.add_edge(START, "node_a"); g.add_edge(START, "node_b"); g.add_edge("node_a", END); g.add_edge("node_b", END)
+    out = g.compile().invoke({"a": "", "b": ""})   # an empty input is an InvalidUpdateError in current LangGraph
     from backend.models.domain_models import ResearchReport, ResearchSession
 
     return {"session": ResearchSession(topic=state["topic"], status="completed"),
@@ -352,14 +353,14 @@ def test_autopilot_plus_fallback_through_the_real_route(world, research):
 
 def test_a_failing_provider_without_fallback_fails_the_run_visibly(world, research):
     script(world, BIG, [Http(429, "rate_limit_exceeded")])
-    import backend.core.llm as llm_mod
+    import backend.core.retry as retry_mod
     import time as _t
     _orig = _t.sleep
-    llm_mod.time.sleep = lambda s: None
+    retry_mod.time.sleep = lambda s: None
     try:
         r = research()
     finally:
-        llm_mod.time.sleep = _orig
+        retry_mod.time.sleep = _orig
     assert r.status_code >= 400
     rows = usage(world)["items"]
     assert rows and all(x["status"] == "failed" and x["fallback_used"] is False and x["actual_model"] is None for x in rows)
@@ -412,10 +413,9 @@ def test_usage_summary_matches_the_rows(world, research):
 
 
 def test_unexpected_errors_are_sanitised(world, monkeypatch):
-    from types import SimpleNamespace
     from backend.routing.service import RoutingService
 
-    monkeypatch.setattr("backend.core.errors.get_settings", lambda: SimpleNamespace(app_env="production"))
+    # safe_server_error no longer depends on the environment: the detail is a fixed label in every mode.
     monkeypatch.setattr(RoutingService, "overview", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("db password=hunter2 at /srv/secret.db")))
     r = world["c"].get(f"{BASE}/overview", headers=world["ha"])
     assert r.status_code == 500 and "hunter2" not in r.text and "/srv" not in r.text
@@ -474,3 +474,20 @@ def test_chat_calls_are_routed_recorded_as_chat_and_can_fall_back(world, monkeyp
     assert rows[0]["requested_model"] == MID and rows[0]["actual_model"] == SMALL and "rate limited (HTTP 429)" in rows[0]["fallback_reason"]
     assert all(x["tokens_reported"] is False and x["actual_cost_usd"] is None for x in rows)       # structured output carries no usage: unknown, not zero
     assert usage(world, "b")["total"] == 0 and current_scope() is None
+
+
+def test_real_graph_helper_uses_node_names_distinct_from_state_keys(world):
+    """Regression: some LangGraph versions reject node names equal to state keys ("a"/"b") with
+    ValueError("'a' is already being used as a state key"), which turned every research run into a 500.
+    Newer versions accept it, so only the safe naming the helper uses is asserted."""
+    g = StateGraph(_S)
+    g.add_node("node_a", lambda _: {"a": "ok"})            # the fixed naming is accepted
+
+
+def test_real_graph_helper_runs_both_parallel_nodes_with_a_non_empty_input():
+    """Regression: some LangGraph versions raised InvalidUpdateError("Must write to at least one of
+    ['a','b']") for ``invoke({})``; the helper passes a non-empty input, which works on all versions."""
+    g = StateGraph(_S)
+    g.add_node("node_a", lambda _: {"a": "A"}); g.add_node("node_b", lambda _: {"b": "B"})
+    g.add_edge(START, "node_a"); g.add_edge(START, "node_b"); g.add_edge("node_a", END); g.add_edge("node_b", END)
+    assert g.compile().invoke({"a": "", "b": ""}) == {"a": "A", "b": "B"}

@@ -100,3 +100,53 @@
   .au-art blockquote { font-size: 1.45rem; max-width: 24ch; }
   .au-art small { display: none; }
 }
+
+/* ══ Product skin: shared with the landing page ═══════════════════════
+   Sans type, frosted header, card form. Overrides the editorial styles above. */
+.sh { background: color-mix(in srgb, var(--ivory) 96%, transparent); box-shadow: 0 1px 0 var(--rule); padding-top: 12px; padding-bottom: 12px; }
+.sh-brand { font: 700 1.3rem/1 var(--sans); letter-spacing: -.03em; }
+.sh-nav a { color: var(--ink2); }
+.doc h1 { font: 700 clamp(2rem, 4.4vw, 3rem)/1.08 var(--sans); letter-spacing: -.04em; }
+.doc h2 { font: 700 1.3rem var(--sans); letter-spacing: -.02em; }
+.sf-grid .sh-brand { font-size: 1.2rem; }
+
+/* auth: product panel */
+.au-art { background: var(--paper) url('../assets/meadow-panel.jpg') 30% 100% / cover no-repeat; justify-content: space-between; gap: 24px; padding: clamp(26px, 4vw, 52px); }
+.au-art::before { background: linear-gradient(180deg, color-mix(in srgb, var(--ivory) 88%, transparent) 0, color-mix(in srgb, var(--ivory) 66%, transparent) 46%, color-mix(in srgb, var(--ivory) 6%, transparent) 100%); }
+.au-pitch { display: grid; gap: 14px; }
+.au-art blockquote { max-width: 14ch; font: 700 clamp(2rem, 3.2vw, 3rem)/1.05 var(--sans); letter-spacing: -.045em; }
+.au-art small { margin-top: 0; font: 500 15px var(--sans); color: var(--ink2); }
+.au-points { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 11px; max-width: 34ch; }
+.au-points li { position: relative; padding-left: 28px; font: 500 14.5px/1.4 var(--sans); color: var(--charcoal); }
+.au-points li::before { content: ''; position: absolute; left: 0; top: .1em; width: 18px; height: 18px; border-radius: 50%; background: var(--charcoal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23FBF7F0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 8.4l2.3 2.3 4.7-5'/%3E%3C/svg%3E") center / 100% no-repeat; }
+.au-mini { position: relative; align-self: flex-start; width: min(260px, 100%); padding: 16px 18px; background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 1px 2px rgba(46, 41, 43, .06), 0 18px 44px -20px rgba(46, 41, 43, .4); display: grid; gap: 4px; }
+.au-mini small { font: 600 12px var(--sans); color: var(--ink3); }
+.au-mini b { font: 700 2rem/1.1 var(--sans); letter-spacing: -.04em; }
+.au-mini-bar { height: 8px; border-radius: 99px; background: var(--paper-deep); overflow: hidden; margin: 4px 0; }
+.au-mini-bar i { display: block; height: 100%; width: 62%; border-radius: 99px; background: var(--charcoal); }
+.au-mini em { font: 500 11.5px var(--sans); font-style: normal; color: var(--ink3); }
+
+/* auth: form */
+.au-body { background: radial-gradient(ellipse 80% 50% at 80% 0, color-mix(in srgb, var(--rose) 16%, transparent), transparent), var(--ivory); }
+.au-wrap { max-width: 440px; }
+.au-card { background: var(--card); border: 1px solid var(--rule); border-radius: 20px; padding: clamp(24px, 3.4vw, 36px); box-shadow: 0 1px 2px rgba(46, 41, 43, .06), 0 24px 60px -28px rgba(46, 41, 43, .35); }
+.au-tabs { display: flex; margin-bottom: 24px; }
+.au-tab { flex: 1; text-align: center; }
+.au-tab[aria-selected="true"] { background: var(--card); }
+.au-pane h2 { font: 700 clamp(1.6rem, 2.6vw, 2rem)/1.1 var(--sans); letter-spacing: -.04em; margin-bottom: 8px; }
+.au-lede { font-size: 14.5px; }
+.au-input .input { background: var(--card); border-radius: 10px; padding: 12px 14px; }
+.au-submit { border-radius: 11px; font-weight: 600; }
+.au-fine { font-size: 14px; }
+@media (max-width: 860px) {
+  .au-points, .au-mini { display: none; }
+  .au-art { padding-bottom: 22px; }
+  .au-art::before { background: color-mix(in srgb, var(--ivory) 80%, transparent); }
+  .au-art blockquote { font-size: 1.6rem; max-width: 22ch; }
+  .au-art small { display: block; }
+}
+
+/* Reserve room for validation messages so the form never shifts under the pointer
+   (a layout shift between mouse-down and mouse-up swallowed the first click on the submit button). */
+.au-err, .au-err:empty { display: block; min-height: 1.35em; margin-top: 3px; }
+.au-field { margin-bottom: 4px; }

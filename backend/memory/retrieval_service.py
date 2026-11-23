@@ -153,8 +153,8 @@ class VectorMemoryService:
             from backend.core.config import get_settings
 
             max_scan = get_settings().retrieval_max_scan_chunks
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Using default retrieval scan limit", extra={"error_type": type(exc).__name__})
         rows = self.repository.chunks.get_user_chunks(user_id, topic=topic, report_ids=report_ids, limit=max_scan)
         if len(rows) >= max_scan:
             logger.warning("Memory scan hit the candidate cap; older chunks excluded", extra={"cap": max_scan})

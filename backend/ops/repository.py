@@ -22,6 +22,15 @@ def estimate_budget_cost(model: str, prompt_tokens: int, completion_tokens: int,
     return (max(0, prompt_tokens) * float(price_in) + max(0, completion_tokens) * float(price_out)) / 1_000_000
 
 
+def _global_spend_cap() -> float | None:
+    """Operator-wide monthly ceiling; None when unset or when settings cannot load."""
+    try:
+        from backend.core.config import get_settings
+        return get_settings().global_monthly_llm_spend_cap_usd
+    except Exception:
+        return None
+
+
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
 
@@ -49,8 +58,11 @@ class OperationalRepository:
         }
 
     def reserve_call(self, user_id: str, purpose: str, model: str, estimate: float | None, *,
-                     default_calls: int, default_spend: float | None, now: datetime | None = None) -> str:
+                     default_calls: int, default_spend: float | None, now: datetime | None = None,
+                     global_spend: float | None = None) -> str:
         now = now or datetime.now(timezone.utc)
+        if global_spend is None:
+            global_spend = _global_spend_cap()
         day_start = now.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         month_start = day_start.replace(day=1)
         event_id = f"bud_{uuid.uuid4().hex}"
@@ -70,7 +82,7 @@ class OperationalRepository:
                         else default_calls)
             spend_cap = (limit_row["monthly_spend_cap_usd"] if limit_row and limit_row["monthly_spend_cap_usd"] is not None
                          else default_spend)
-            if spend_cap is not None and estimate is None:
+            if (spend_cap is not None or global_spend is not None) and estimate is None:
                 raise UsageLimitExceeded("Model call blocked because its cost cannot be safely estimated under the active spend cap.")
             # The numeric field is a compatibility placeholder when pricing is
             # unknown; cost_known ensures it is never interpreted as a free call.
@@ -87,6 +99,20 @@ class OperationalRepository:
             monthly_spend = conn.execute(
                 "SELECT COALESCE(SUM(CASE WHEN actual_cost_usd IS NULL THEN estimated_cost_usd ELSE MAX(actual_cost_usd,estimated_cost_usd) END),0) "
                 "FROM llm_budget_events WHERE user_id=? AND created_at>=?", (user_id, _iso(month_start))).fetchone()[0]
+            if global_spend is not None:
+                # Same accounting as the per-user check, summed over every account.
+                global_unknown = conn.execute(
+                    "SELECT COUNT(*) FROM llm_budget_events WHERE created_at>=? AND cost_known=0",
+                    (_iso(month_start),)).fetchone()[0]
+                if global_unknown:
+                    conn.commit()
+                    raise UsageLimitExceeded("The service's monthly spend cap cannot be safely enforced because earlier model call costs are unknown.")
+                global_monthly = conn.execute(
+                    "SELECT COALESCE(SUM(CASE WHEN actual_cost_usd IS NULL THEN estimated_cost_usd ELSE MAX(actual_cost_usd,estimated_cost_usd) END),0) "
+                    "FROM llm_budget_events WHERE created_at>=?", (_iso(month_start),)).fetchone()[0]
+                if float(global_monthly) + amount > float(global_spend) + 1e-12:
+                    conn.commit()
+                    raise UsageLimitExceeded("The service has reached its monthly usage limit. Please try again next month.")
             if call_cap is not None and daily_count >= int(call_cap):
                 conn.commit()
                 raise UsageLimitExceeded("Daily model call limit reached.")

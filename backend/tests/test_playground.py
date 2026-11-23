@@ -4,7 +4,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from backend.tests.test_m9_service_api import BIG, SMALL, activate, body, make_policy, repository, script, world
+from backend.tests.test_m9_service_api import activate, body, make_policy, repository, script, world
+
+# Groq retired the Llama IDs on 2026-08-16 and the Playground rejects them by design.
+BIG, SMALL = "openai/gpt-oss-120b", "openai/gpt-oss-20b"
 
 BASE = "/api/playground"
 

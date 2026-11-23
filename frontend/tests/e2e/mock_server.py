@@ -57,8 +57,13 @@ class H(BaseHTTPRequestHandler):
         if not os.path.abspath(f).startswith(ROOT) or not os.path.isfile(f): self.send_response(404); self.end_headers(); return
         ct = {'.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml'}.get(os.path.splitext(f)[1], 'application/octet-stream')
         data = open(f, 'rb').read(); self.send_response(200); self.send_header('Content-Type', ct + '; charset=utf-8' if ct.startswith('text') else ct); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
-def serve(port=8000, static_port=5500):
-    a = ThreadingHTTPServer(('127.0.0.1', port), H); b = ThreadingHTTPServer(('127.0.0.1', static_port), H)
-    threading.Thread(target=a.serve_forever, daemon=True).start(); threading.Thread(target=b.serve_forever, daemon=True).start(); return a, b
+def serve(port=None, static_port=5500):
+    # The UI resolves its API same-origin, so one server (API + static) is enough; `port` is optional.
+    b = ThreadingHTTPServer(('127.0.0.1', static_port), H)
+    threading.Thread(target=b.serve_forever, daemon=True).start()
+    a = b
+    if port:
+        a = ThreadingHTTPServer(('127.0.0.1', port), H); threading.Thread(target=a.serve_forever, daemon=True).start()
+    return a, b
 if __name__ == '__main__':
-    serve(); print('mock api :8000, static :5500'); threading.Event().wait()
+    serve(); print('mock api + static :5500'); threading.Event().wait()

@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import math
 import re
 import sqlite3
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Protocol
 
@@ -28,6 +29,8 @@ from .models import NormalizedResponse, ProviderRequest, Usage
 from .pricing import compute_cost, estimate_max_cost
 from .repository import CompareRepository
 from .settings import PROVIDER_LABELS, PROVIDERS, ProviderSettings
+
+logger = logging.getLogger(__name__)
 
 EVIDENCE_MODES = ("none", "atlas", "provider_search")
 _KEY_RE = re.compile(r"^[A-Za-z0-9_\-]{8,80}$")
@@ -647,8 +650,8 @@ class CompareService:
                                    attempts=max(1, len(r["latency"]["attempts"])), latency_ms=r["latency"]["total_ms"],
                                    input_tokens=u["input_tokens"], output_tokens=u["output_tokens"],
                                    cost_usd=r["cost"]["usd"], cost_basis=r["cost"]["basis"])
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Compare usage logging failed: %s", type(exc).__name__)
         try:
             self.repo.save_run(user_id, payload["run_id"], req.kind, payload["prompt"], payload["evidence_mode"],
                                model_ids, payload, req.idempotency_key)

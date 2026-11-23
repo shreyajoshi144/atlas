@@ -9,6 +9,7 @@
    ══════════════════════════════════════════════════════════════════════ */
 :root {
   --ivory: #FBF7F0;
+  --card: color-mix(in srgb, var(--ivory) 70%, white); /* a lighter tint of ivory for raised surfaces; no new ink */
   --paper: #F2EADF;
   --charcoal: #2E292B;
   --mauve: #7A6270;

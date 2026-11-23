@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from backend.auth.dependencies import get_current_user
 from backend.auth.rate_limit import rate_limit_by_user
@@ -66,8 +66,8 @@ async def semantic_search(
                 if row:
                     summary = row.get("summary", "")
                     topic = row.get("topic", topic)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Report lookup failed", extra={"error_type": type(exc).__name__})
 
             results.append(
                 SemanticSearchResultResponse(

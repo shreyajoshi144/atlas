@@ -5,27 +5,84 @@
 <meta name="theme-color" content="#FBF7F0" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%237A6270' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Cpath d='M32 8 C40 20 40 30 32 34 C24 30 24 20 32 8Z' fill='%23C8999C'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,100;1,9..144,300..500,100&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/landing.css">
 </head>
 <body class="lp" id="top">
 <a class="skip" href="#main">Skip to content</a>
 <header class="sh" id="siteHeader"><a class="sh-brand" href="#top" aria-label="Atlas home"><span class="sh-mark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M32 10 C41 21 41 31 32 36 C23 31 23 21 32 10Z" fill="currentColor" fill-opacity=".25"/><path d="M32 36 V54 M32 46 C26 44 22 40 21 36 M32 44 C38 42 42 38 43 34"/></svg></span>Atlas</a>
-<nav class="sh-nav" aria-label="Sections"><a href="#product">Product</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#use-cases">Use cases</a><a href="#faq">FAQ</a></nav>
+<nav class="sh-nav" aria-label="Sections"><a href="#product">Product</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#use-cases">Use cases</a><a href="#engineering">Engineering</a><a href="#faq">FAQ</a></nav>
 <div class="sh-cta"><a class="btn btn-ghost btn-sm" href="auth.html?mode=signin">Sign in</a><a class="btn btn-sm" href="auth.html?mode=signup">Create account</a><button type="button" class="btn-icon sh-toggle" id="navToggle" aria-expanded="false" aria-controls="navDrawer">Menu</button></div></header>
-<div class="sh-drawer" id="navDrawer"><a href="#product">Product</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#use-cases">Use cases</a><a href="#faq">FAQ</a><a href="auth.html?mode=signin">Sign in</a><a href="auth.html?mode=signup">Create account</a></div>
+<div class="sh-drawer" id="navDrawer"><a href="#product">Product</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#use-cases">Use cases</a><a href="#engineering">Engineering</a><a href="#faq">FAQ</a><a href="auth.html?mode=signin">Sign in</a><a href="auth.html?mode=signup">Create account</a></div>
 
 <main id="main">
 <section class="hero" aria-labelledby="heroTitle">
-  <div class="motes" aria-hidden="true"><i style="--x:8%;--s:5px;--d:19s;--delay:-2s;--dx:40px"></i><i style="--x:17%;--s:3px;--d:23s;--delay:-9s;--dx:-30px"></i><i style="--x:26%;--s:6px;--d:21s;--delay:-14s;--dx:60px"></i><i style="--x:34%;--s:4px;--d:26s;--delay:-5s;--dx:-50px"></i><i style="--x:43%;--s:5px;--d:20s;--delay:-11s;--dx:30px"></i><i style="--x:52%;--s:3px;--d:24s;--delay:-17s;--dx:-20px"></i><i style="--x:61%;--s:6px;--d:22s;--delay:-7s;--dx:70px"></i><i style="--x:69%;--s:4px;--d:27s;--delay:-3s;--dx:-60px"></i><i style="--x:77%;--s:5px;--d:18s;--delay:-12s;--dx:36px"></i><i style="--x:85%;--s:3px;--d:25s;--delay:-19s;--dx:-44px"></i><i style="--x:92%;--s:5px;--d:21s;--delay:-6s;--dx:24px"></i></div>
-  <div class="hero-copy">
-    <h1 id="heroTitle"><span>Research you can trace.</span><span>AI you can measure.</span></h1>
+  <div class="wrap hero-copy">
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Evidence-backed research &middot; Model evaluation &middot; Cost control</p>
+    <h1 id="heroTitle"><span>Research you can trace.</span><span class="grad">AI you can measure.</span></h1>
     <p class="hero-lede">Atlas is a workspace for evidence-backed research, and for putting the AI behind it to the test. Follow every claim to its source, compare and benchmark models, build repeatable workflows, and decide which model runs and what it costs.</p>
-    <div class="hero-cta"><a class="btn" href="auth.html?mode=signup">Create your account</a><a class="btn btn-ghost" href="auth.html?mode=signin">Sign in</a></div>
-    <p class="hero-note">One account for research, the AI Playground, AtlasBench, Workflow Studio and Runtime &amp; Control. <a href="#product">See how a claim is traced</a>.</p>
+    <div class="hero-cta"><a class="btn btn-lg" href="auth.html?mode=signup">Create your account</a><a class="btn btn-ghost btn-lg" href="auth.html?mode=signin">Sign in</a></div>
+    <ul class="proof" aria-label="Highlights">
+      <li>Every claim linked to its source</li>
+      <li>6 deterministic benchmark measures</li>
+      <li>Per-user and app-wide spend caps</li>
+    </ul>
   </div>
-  <div class="grass grass-back" aria-hidden="true"></div><div class="grass grass-front" aria-hidden="true"></div>
 </section>
+
+<div class="dash-wrap"><div class="wrap">
+<figure class="dash" role="img" aria-label="Illustration of the Atlas workspace overview with sample figures: claims supported, sources read, estimated spend, model composite scores, claims by level of support and recent cases.">
+  <div class="dash-bar" aria-hidden="true"><i></i><i></i><i></i><span>Atlas &middot; Workspace overview</span><em>Sample data</em></div>
+  <div class="dash-body" aria-hidden="true">
+    <aside class="dash-side">
+      <div class="side-brand"><span class="side-mark"></span>Atlas</div>
+      <ul>
+        <li class="on">Overview</li><li>Research</li><li>AI Playground</li><li>Compare</li><li>AtlasBench</li><li>Workflow Studio</li><li>Runtime &amp; Control</li>
+      </ul>
+      <div class="side-foot"><span class="avatar">S</span><span>Sample user</span></div>
+    </aside>
+    <div class="dash-main">
+      <div class="dash-head"><div><b>Evidence overview</b><small>Last 30 days</small></div><span class="chip">Export report</span></div>
+      <div class="kpis">
+        <div class="kpi"><small>Claims supported</small><b>62%</b><span class="up">&#9650; 4 pts</span>
+          <svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,22 14,19 28,21 42,14 56,16 70,9 84,11 100,4"/></svg></div>
+        <div class="kpi"><small>Sources read</small><b>142</b><span class="up">&#9650; 18</span>
+          <svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,20 14,22 28,17 42,18 56,12 70,13 84,8 100,6"/></svg></div>
+        <div class="kpi"><small>Estimated spend</small><b>$3.18</b><span class="flat">of $25.00 cap</span>
+          <svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,24 14,23 28,21 42,20 56,17 70,15 84,13 100,11"/></svg></div>
+        <div class="kpi"><small>Fallbacks fired</small><b>2</b><span class="flat">of 318 calls</span>
+          <svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,24 14,24 28,23 42,24 56,20 70,24 84,24 100,22"/></svg></div>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <h4>Model composite score <small>AtlasBench &middot; frozen task</small></h4>
+          <div class="bars">
+            <div class="bar"><span>Model A</span><div class="trk"><i class="b1" style="--w:82%"></i></div><b>0.82</b></div>
+            <div class="bar"><span>Model B</span><div class="trk"><i class="b2" style="--w:74%"></i></div><b>0.74</b></div>
+            <div class="bar"><span>Model C</span><div class="trk"><i class="b3" style="--w:69%"></i></div><b>0.69</b></div>
+            <div class="bar"><span>Model D</span><div class="trk"><i class="b4" style="--w:61%"></i></div><b>0.61</b></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h4>Claims by support</h4>
+          <div class="donut-row">
+            <svg class="donut" viewBox="0 0 36 36"><circle class="d0" cx="18" cy="18" r="15.9155"/><circle class="d1" cx="18" cy="18" r="15.9155" stroke-dasharray="62 38" stroke-dashoffset="25"/><circle class="d2" cx="18" cy="18" r="15.9155" stroke-dasharray="26 74" stroke-dashoffset="-37"/><circle class="d3" cx="18" cy="18" r="15.9155" stroke-dasharray="12 88" stroke-dashoffset="-63"/></svg>
+            <ul class="legend"><li><i class="l1"></i>Supported<b>62%</b></li><li><i class="l2"></i>Partly supported<b>26%</b></li><li><i class="l3"></i>Contested<b>12%</b></li></ul>
+          </div>
+        </div>
+      </div>
+      <div class="panel tbl">
+        <h4>Recent cases</h4>
+        <div class="trow th"><span>Case</span><span>Mode</span><span>Sources</span><span>Verification</span></div>
+        <div class="trow"><span>Solid-state battery outlook</span><span>Investigate</span><span>12</span><span><em class="st s1">Supported</em></span></div>
+        <div class="trow"><span>Vector database comparison</span><span>Compare</span><span>9</span><span><em class="st s2">Partly supported</em></span></div>
+        <div class="trow"><span>Regional demand trend</span><span>Explore</span><span>15</span><span><em class="st s3">Contested</em></span></div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="dash-cap">Illustration with sample data, not real results.</figcaption>
+</figure>
+</div></div>
 
 <section class="sec" id="product" aria-labelledby="productH"><div class="wrap">
   <div class="sec-head"><div class="kick">Product</div><h2 id="productH">Most tools give you an answer. Atlas gives you the answer and its roots.</h2><p>Each claim in a report stays linked to the passages that support it, with its strength stated in words. Select a claim to see where it grows from.</p></div>
@@ -122,6 +179,24 @@
   <p class="honest"><b>What this page does not claim.</b> No compliance certification, no uptime guarantee and no data-residency promise is made here. Those depend on who runs your deployment; ask them.</p>
 </div></section>
 
+<section class="sec band" id="engineering" aria-labelledby="engH"><div class="wrap">
+  <div class="sec-head"><div class="kick">Engineering</div><h2 id="engH">Built to be checked, like the research it produces.</h2><p>Atlas is an open codebase, not a mockup. These figures are counted from the repository, and the limits are stated next to them.</p></div>
+  <ul class="eng-stats" aria-label="Codebase at a glance">
+    <li><b>24k</b><span>lines of application Python across 18 API route modules</span></li>
+    <li><b>884</b><span>test functions in 56 backend test files, plus 7 UI test files</span></li>
+    <li><b>6</b><span>deterministic benchmark measures. No LLM judge anywhere in scoring</span></li>
+    <li><b>4</b><span>live model providers behind one normalised, retry-aware client</span></li>
+  </ul>
+  <ul class="trust">
+    <li><b>Evidence before opinion</b><span>Models are ranked only on frozen tasks over fictional evidence, so no one can answer from memory. Two models are separated only when their 95% intervals do not overlap.</span></li>
+    <li><b>Failure is a feature</b><span>Bounded retries, a per-provider circuit breaker, fallback only on provider trouble, and a stated reason whenever autopilot declines to choose.</span></li>
+    <li><b>Cost is bounded</b><span>Per-user daily call limits and monthly spend caps, plus an app-wide monthly ceiling. A call with an unknown price is refused instead of assumed free.</span></li>
+    <li><b>Operable</b><span>Health and readiness probes, request IDs on every response, structured logs with key redaction, admin metrics and optional error tracking with no personal data.</span></li>
+  </ul>
+  <p class="eng-links"><a class="btn btn-ghost" href="https://github.com/shreyajoshi144/atlas" rel="noopener">View the source on GitHub</a><a class="btn btn-ghost" href="https://github.com/shreyajoshi144/atlas/tree/main/docs" rel="noopener">Read the architecture docs</a></p>
+  <p class="honest"><b>Limits, plainly.</b> One instance, SQLite and a local vector store, so this is built for a demo or a small team, not horizontal scale. Costs are estimates from catalogue prices, not invoices. No model rankings ship with the repository; they come from runs you do with your own keys.</p>
+</div></section>
+
 <section class="sec band" id="faq" aria-labelledby="faqH"><div class="wrap">
   <div class="sec-head"><div class="kick">FAQ</div><h2 id="faqH">Straight answers.</h2></div>
   <div class="faqs">
@@ -140,7 +215,6 @@
   <p>Create an account and open your first research case, or sign in to pick up where you left off.</p>
   <div class="hero-cta"><a class="btn" href="auth.html?mode=signup">Create your account</a><a class="btn btn-ghost" href="auth.html?mode=signin">Sign in</a></div>
   <p class="sub"><a href="auth.html?mode=signin#forgot">Forgot your password?</a></p>
-  <div class="grass grass-back" aria-hidden="true"></div><div class="grass grass-front" aria-hidden="true"></div>
 </section>
 </main>
 

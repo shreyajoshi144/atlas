@@ -177,7 +177,8 @@ def test_internal_exception_detail_is_generic_in_development(api_client, monkeyp
         history_route.ResearchRepository = original
 
     assert r.status_code == 500
-    assert r.json()["detail"] == "Something went wrong. Please try again."
+    # History routes report through safe_server_error: a fixed, non-sensitive action label.
+    assert r.json()["detail"] == "Listing reports failed. Please try again."
     assert "a specific dev-only debugging detail" not in r.text
 
 
@@ -434,3 +435,158 @@ def test_rate_limits_are_per_user_not_shared_globally(api_client, monkeypatch):
     # User B, same process/IP, should be unaffected.
     r_b = api_client.post("/api/search/semantic", json={"query": "probe"}, headers={"Authorization": f"Bearer {token_b}"})
     assert r_b.status_code == 200
+
+
+# ── 4. Content-Security-Policy: API vs. frontend HTML ───────────────────────
+API_CSP_EXPECTED = "default-src 'none'; frame-ancestors 'none'"
+
+
+def _frontend_client(isolated_paths):
+    """App client with the static frontend mounted at / exactly as deploy/space_app.py does."""
+    from backend.core.csp import FRONTEND_DIR
+    from backend.core.static import FrontendFiles
+
+    client, main_module = _make_app_client(isolated_paths)
+    main_module.app.mount("/", FrontendFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+    return client
+
+
+def _directives(csp):
+    return {p.split(" ", 1)[0]: (p.split(" ", 1)[1] if " " in p else "") for p in csp.split("; ")}
+
+
+def test_api_responses_keep_restrictive_csp(isolated_paths):
+    with _frontend_client(isolated_paths) as c:
+        for path in ("/health", "/ready", "/api/does-not-exist"):
+            assert c.get(path).headers["content-security-policy"] == API_CSP_EXPECTED, path
+
+
+def test_frontend_html_gets_frontend_csp_and_keeps_other_headers(isolated_paths):
+    with _frontend_client(isolated_paths) as c:
+        for path in ("/", "/index.html", "/auth.html", "/app.html", "/contact.html", "/privacy.html", "/terms.html"):
+            r = c.get(path)
+            assert r.status_code == 200, path
+            d = _directives(r.headers["content-security-policy"])
+            assert d["default-src"] == "'none'"
+            assert "'self'" in d["script-src"].split()
+            assert "unsafe-eval" not in r.headers["content-security-policy"]
+            assert "'unsafe-inline'" not in d["script-src"].split()
+            assert d["frame-ancestors"] == "'none'"
+            assert d["style-src"] == "'self' https://fonts.googleapis.com"
+            assert d["font-src"] == "https://fonts.gstatic.com"
+            assert d["connect-src"] == "'self'"
+            assert r.headers["x-content-type-options"] == "nosniff"
+            assert r.headers["x-frame-options"] == "DENY"
+            assert r.headers["referrer-policy"]
+        # inline event-handler allowance is confined to the app shell
+        assert "script-src-attr" in _directives(c.get("/app.html").headers["content-security-policy"])
+        assert "script-src-attr" not in _directives(c.get("/index.html").headers["content-security-policy"])
+
+
+def test_frontend_csp_permits_every_resource_the_pages_load(isolated_paths):
+    """Every <script>/<link> in every page must be allowed by that page's own CSP."""
+    import hashlib, base64, re
+    from backend.core.csp import FRONTEND_DIR
+
+    with _frontend_client(isolated_paths) as c:
+        for html_file in sorted(FRONTEND_DIR.glob("*.html")):
+            page = "/" + html_file.name
+            r = c.get(page)
+            d = _directives(r.headers["content-security-policy"])
+            html = html_file.read_text(encoding="utf-8")
+            for src in re.findall(r'<script[^>]*\ssrc="([^"]+)"', html):
+                assert not src.startswith(("http:", "https:", "//")), (page, src)  # => covered by 'self'
+                assert c.get("/" + src).status_code == 200
+            for m in re.finditer(r"<script(?![^>]*\ssrc=)[^>]*>(.*?)</script>", html, re.S):
+                if m.group(1).strip():
+                    h = "'sha256-%s'" % base64.b64encode(hashlib.sha256(m.group(1).encode()).digest()).decode()
+                    assert h in d["script-src"].split(), (page, "inline script not hashed")
+            for href in re.findall(r'<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"', html) + \
+                    re.findall(r'<link href="([^"]+)"[^>]*rel="stylesheet"', html):
+                if href.startswith("https://fonts.googleapis.com/"):
+                    assert "https://fonts.googleapis.com" in d["style-src"].split()
+                else:
+                    assert not href.startswith(("http:", "https:", "//")), (page, href)
+                    assert c.get("/" + href).status_code == 200
+
+
+HF_ORIGINS = "https://huggingface.co https://*.hf.space"
+
+
+def test_embedding_is_denied_by_default(isolated_paths):
+    with _frontend_client(isolated_paths) as c:
+        r = c.get("/auth.html")
+        assert _directives(r.headers["content-security-policy"])["frame-ancestors"] == "'none'"
+        assert r.headers["x-frame-options"] == "DENY"
+
+
+def test_frame_ancestors_opt_in_allows_only_listed_origins_and_never_the_api(isolated_paths, monkeypatch):
+    monkeypatch.setenv("FRAME_ANCESTORS", HF_ORIGINS)
+    with _frontend_client(isolated_paths) as c:
+        for page in ("/", "/auth.html", "/app.html"):
+            r = c.get(page)
+            assert _directives(r.headers["content-security-policy"])["frame-ancestors"] == HF_ORIGINS, page
+            assert "x-frame-options" not in r.headers, page
+        assert c.get("/health").headers["content-security-policy"] == API_CSP_EXPECTED
+        etag = c.get("/auth.html").headers["etag"]
+        r304 = c.get("/auth.html", headers={"If-None-Match": etag})
+        assert _directives(r304.headers["content-security-policy"])["frame-ancestors"] == HF_ORIGINS
+
+
+@pytest.mark.parametrize("bad", ["*", "http://huggingface.co", "https://a.com; script-src *", "'none' https://a.com", ""])
+def test_frame_ancestors_rejects_unsafe_values(bad):
+    from pydantic import ValidationError
+
+    from backend.core.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(FRAME_ANCESTORS=bad)
+
+
+def test_register_and_login_work_same_origin_with_restrictive_csp(isolated_paths):
+    """The UI and API share one origin: relative /api calls succeed and connect-src stays 'self'."""
+    with _frontend_client(isolated_paths) as c:
+        auth_csp = _directives(c.get("/auth.html").headers["content-security-policy"])
+        assert auth_csp["connect-src"] == "'self'"
+        body = {"name": "Same Origin", "email": "same.origin@example.com", "password": "correct-horse-battery"}
+        reg = c.post("/api/auth/register", json=body)
+        assert reg.status_code == 200 and reg.json()["success"] is True, reg.text
+        login = c.post("/api/auth/login", json={"email": body["email"], "password": body["password"]})
+        assert login.status_code == 200 and login.json()["data"]["access_token"], login.text
+        token = login.json()["data"]["access_token"]
+        me = c.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert me.status_code == 200 and me.json()["data"]["email"] == body["email"]
+
+
+def test_frontend_assets_revalidate_so_deploys_show_without_hard_refresh(isolated_paths):
+    with _frontend_client(isolated_paths) as c:
+        for path in ("/", "/auth.html", "/app.html", "/js/config.js", "/js/auth-page.js", "/js/script.js", "/css/atlas.css"):
+            r = c.get(path)
+            assert r.status_code == 200, path
+            assert r.headers["cache-control"] == "no-cache", path
+            assert r.headers.get("etag"), path
+        # An unchanged file revalidates cheaply instead of re-downloading.
+        etag = c.get("/js/config.js").headers["etag"]
+        assert c.get("/js/config.js", headers={"If-None-Match": etag}).status_code == 304
+        # A 304 replaces the cached page's headers in the browser, so it must keep the page CSP
+        # (not the API's default-src 'none', which would block every script and style).
+        for page in ("/", "/auth.html", "/app.html"):
+            tag = c.get(page).headers["etag"]
+            r304 = c.get(page, headers={"If-None-Match": tag})
+            assert r304.status_code == 304, page
+            assert _directives(r304.headers["content-security-policy"])["connect-src"] == "'self'", page
+        # API responses are not given the static-file policy.
+        assert "no-cache" not in c.get("/health").headers.get("cache-control", "")
+
+
+def test_frontend_csp_in_production_still_sends_hsts(isolated_paths, monkeypatch):
+    import secrets as _secrets
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("SECRET_KEY", _secrets.token_urlsafe(48))
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://myapp.example.com")
+    monkeypatch.setenv("DEFAULT_MONTHLY_LLM_SPEND_CAP_USD", "25.00")
+    with _frontend_client(isolated_paths) as c:
+        r = c.get("/")
+        assert "strict-transport-security" in r.headers
+        assert "script-src" in r.headers["content-security-policy"]
+        assert c.get("/health").headers["content-security-policy"] == API_CSP_EXPECTED

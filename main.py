@@ -26,7 +26,10 @@ from backend.api.routes.search import router as search_router
 from backend.api.routes.settings import router as settings_router
 from backend.auth.dependencies import get_current_user
 from backend.core.config import get_settings, validate_production_config
+from backend.core.csp import API_CSP, frontend_csp, is_frontend_html
+from backend.core.error_tracking import init_error_tracking
 from backend.core.logging import configure_logging, get_logger, safe_traceback_frames
+from backend.core.metrics import metrics_middleware
 from backend.core.request_context import request_context_middleware
 from backend.database import ResearchRepository
 from backend.ops.repository import UsageLimitExceeded
@@ -43,6 +46,7 @@ async def lifespan(app: FastAPI):
     # password reset lookup) with unsafe production configuration. No-op in
     # development/staging — see validate_production_config for the checks.
     validate_production_config(settings)
+    init_error_tracking(settings.sentry_dsn, settings.app_env)
 
     repository = ResearchRepository()
     repository.initialize()
@@ -100,7 +104,8 @@ async def limit_request_body_size_middleware(request: Request, call_next):
 
 
 # ── Security headers ─────────────────────────────────────────────────────────
-# Applied to every response. CSP is skipped for the interactive API docs
+# Applied to every response. API responses keep a locked-down CSP; HTML pages
+# from the static frontend mount get backend.core.csp.frontend_csp. CSP is skipped for the interactive API docs
 # pages, which load Swagger/ReDoc's UI assets from a CDN and would be broken
 # by a strict default-src — everywhere else this is a pure JSON API with no
 # first-party HTML/JS to protect beyond the standard clickjacking/MIME-sniffing
@@ -113,9 +118,18 @@ async def security_headers_middleware(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["X-Frame-Options"] = "DENY"
-    if request.url.path not in _DOCS_PATHS:
-        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    frame_ancestors = get_settings().frame_ancestors
+    # X-Frame-Options cannot list several origins, so it is only sent when embedding is off or same-origin.
+    if frame_ancestors == "'none'":
+        response.headers["X-Frame-Options"] = "DENY"
+    elif frame_ancestors == "'self'":
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    path = request.url.path
+    if path not in _DOCS_PATHS:
+        if is_frontend_html(path, response.headers.get("content-type", ""), response.status_code):
+            response.headers["Content-Security-Policy"] = frontend_csp(path, frame_ancestors)
+        else:
+            response.headers["Content-Security-Policy"] = API_CSP
     # HSTS only makes sense once the app is actually served over HTTPS —
     # sending it over plain HTTP (e.g. local dev) has no effect but is
     # still misleading, so it's gated on production specifically.
@@ -129,6 +143,10 @@ async def security_headers_middleware(request: Request, call_next):
 # way it still adds CORS headers to responses that short-circuit inside the
 # middlewares above (e.g. a 413 from the body-size check), not just to
 # responses that make it all the way to a route handler.
+# Registered after the size-limit and security-header middlewares so it sees their
+# short-circuit responses (e.g. 413) too; CORS below stays outermost.
+app.middleware("http")(metrics_middleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_allow_origins,
@@ -173,7 +191,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 # ── Route registration ────────────────────────────────────────────────────────
 #
-# Frontend base: API_BASE_URL = "http://localhost:8000/api"
+# Frontend base: API_BASE_URL = "http://localhost:7860/api"
 #
 # POST   /api/auth/register                        → auth (open)
 # POST   /api/auth/login                            → auth (open)

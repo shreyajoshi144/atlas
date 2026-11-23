@@ -93,3 +93,29 @@ def test_finalization_uses_persisted_report_id():
 
     source = (Path(__file__).resolve().parents[1] / "graph" / "nodes.py").read_text()
     assert 'metadata={"report_id": state["final_report"].report_id}' in source
+
+
+def test_safe_server_error_hides_details_from_response_and_only_logs_them_in_development(monkeypatch):
+    import logging
+
+    from backend.core import errors
+    from backend.core.config import Settings
+
+    records = []
+
+    class H(logging.Handler):
+        def emit(self, record):
+            records.append(record)
+
+    log = logging.getLogger("test.safe_server_error")
+    log.addHandler(H())
+    try:
+        raise ValueError("secret-detail-123")
+    except ValueError as exc:
+        for env, debug, expect_detail in (("development", True, True), ("production", True, False), ("development", False, False)):
+            monkeypatch.setattr("backend.core.config.get_settings", lambda e=env, d=debug: Settings(app_env=e, debug=d))
+            records.clear()
+            http = errors.safe_server_error(log, "Research run", exc)
+            assert "secret-detail-123" not in http.detail and http.status_code == 500
+            assert hasattr(records[0], "debug_error_message") is expect_detail
+            assert hasattr(records[0], "debug_traceback") is expect_detail

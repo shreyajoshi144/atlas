@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from backend.core.config import get_settings
-from backend.core.retry import invoke_with_retry
+from backend.core.retry import invoke_with_retry  # noqa: F401  (re-exported: agents and routes import it from here)
 from langchain_groq import ChatGroq
 from langchain_openai import OpenAIEmbeddings
 

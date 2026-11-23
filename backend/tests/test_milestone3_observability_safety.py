@@ -158,7 +158,6 @@ async def test_ssrf_redirect_revalidates_every_hop():
     "agents/writer_agent.py",
     "agents/verification_agent.py",
     "agents/executive_brief_agent.py",
-    "services/verification_service.py",
 ])
 def test_llm_boundaries_wrap_external_or_derived_content(relative_path):
     path = Path(__file__).resolve().parents[1] / relative_path

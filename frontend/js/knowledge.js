@@ -12,6 +12,7 @@
 (function () {
   'use strict';
 
+  const safeHref = (u) => (/^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '#');
   const esc = (typeof escapeHtml === 'function') ? escapeHtml : function (s) {
     if (s === null || s === undefined) return '';
     return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -225,7 +226,7 @@
     const d = KM.evidenceDetail; if (!d) return '<div class="km-empty">Select evidence.</div>';
     const s = d.source;
     return `<div class="km-card"><div class="km-row-title">${esc(s.title || s.domain || 'Source')}</div>
-      <div class="km-row-sub"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.domain || s.url)}</a></div>
+      <div class="km-row-sub"><a href="${esc(safeHref(s.url))}" target="_blank" rel="noopener noreferrer">${esc(s.domain || s.url)}</a></div>
       <div class="km-kv"><span>Freshness</span><span>${freshnessBadge(s.freshness)}</span></div>
       <div class="km-kv"><span>Published</span><span>${esc(fmtDate(s.publish_date))}</span></div>
       <div class="km-kv"><span>Last seen</span><span>${esc(fmtDate(s.last_seen_at))}</span></div>
@@ -291,7 +292,7 @@
     const ev = (d.evidence || []).map(e => {
       const role = ROLE_META[e.role] || ROLE_META.qualifying;
       return `<div class="km-row km-ev-${e.role === 'counter' ? 'conflict' : e.role === 'supporting' ? 'support' : 'mixed'}"><div class="km-row-title">“${esc(e.passage)}”</div>
-        <div class="km-row-sub">${badge(role)} <a href="${esc(e.source.url)}" target="_blank" rel="noopener noreferrer">${esc(e.source.domain)}</a>
+        <div class="km-row-sub">${badge(role)} <a href="${esc(safeHref(e.source.url))}" target="_blank" rel="noopener noreferrer">${esc(e.source.domain)}</a>
         ${e.source.independent ? '<span class="badge badge-sage">Independent source</span>' : '<span class="badge badge-amber">Same domain as original</span>'}
         <span class="km-strength">strength ${pct(e.strength)}</span> ${esc(fmtDate(e.source.publish_date))}</div></div>`;
     }).join('');

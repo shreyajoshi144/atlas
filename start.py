@@ -12,6 +12,7 @@ Stop with Ctrl+C — both servers shut down together.
 """
 from __future__ import annotations
 
+import os
 import socket
 import subprocess
 import sys
@@ -22,8 +23,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parent
 FRONTEND_DIR = ROOT / "frontend"
-BACKEND_PORT = 8000
-FRONTEND_PORT = 5500
+PORT = int(os.environ.get("PORT", 7860))  # API + frontend share one origin, same as Docker / Spaces
 
 if not (ROOT / ".env").exists():
     print("⚠  No .env file found next to start.py.")
@@ -57,30 +57,24 @@ def _port_in_use(port: int, host: str = "127.0.0.1") -> bool:
         return False
 
 
-for _port, _name in ((BACKEND_PORT, "backend"), (FRONTEND_PORT, "frontend")):
+for _port, _name in ((PORT, "atlas"),):
     if _port_in_use(_port):
         print(f"⚠  Port {_port} ({_name}) is already in use.")
         print("   This usually means a previous `python start.py` is still running")
         print("   (e.g. its terminal tab was closed instead of pressing Ctrl+C).")
         print("   Find and stop it, then try again:")
         print(f"     lsof -nP -iTCP:{_port} -sTCP:LISTEN")
-        print(f"     lsof -ti:{BACKEND_PORT},{FRONTEND_PORT} | xargs kill -9")
+        print(f"     lsof -ti:{PORT} | xargs kill -9")
         sys.exit(1)
 
-print("→ Starting backend (uvicorn) on port", BACKEND_PORT, "...")
+print("→ Starting Atlas (API + frontend) on port", PORT, "...")
 backend = subprocess.Popen(
-    [sys.executable, "-m", "uvicorn", "main:app", "--port", str(BACKEND_PORT)],
+    [sys.executable, "-m", "uvicorn", "deploy.space_app:app", "--port", str(PORT)],
     cwd=str(ROOT),
 )
 
-print("→ Starting frontend (static server) on port", FRONTEND_PORT, "...")
-frontend = subprocess.Popen(
-    [sys.executable, "-m", "http.server", str(FRONTEND_PORT)],
-    cwd=str(FRONTEND_DIR),
-)
-
 print("→ Waiting for backend to become healthy...")
-health_url = f"http://localhost:{BACKEND_PORT}/health"
+health_url = f"http://localhost:{PORT}/health"
 for _ in range(30):
     try:
         with urlopen(health_url, timeout=1) as r:
@@ -101,28 +95,26 @@ for _ in range(30):
 else:
     print("⚠  Backend did not report healthy in time — check its terminal output above.")
 
-landing_url = f"http://localhost:{FRONTEND_PORT}/index.html"
-app_url = f"http://localhost:{FRONTEND_PORT}/app.html"
+landing_url = f"http://localhost:{PORT}/index.html"
+app_url = f"http://localhost:{PORT}/app.html"
 print(f"→ Opening {landing_url}")
 webbrowser.open(landing_url)
 
 print("\nAtlas AI is running.")
-print(f"  Backend:  http://localhost:{BACKEND_PORT}  (docs at /docs)")
+print(f"  API:      http://localhost:{PORT}/api  (docs at /docs)")
 print(f"  Landing:  {landing_url}")
 print(f"  App:      {app_url}")
-print("Press Ctrl+C to stop both.\n")
+print("Press Ctrl+C to stop.\n")
 
 try:
     backend.wait()
 except KeyboardInterrupt:
     pass
 finally:
-    for p in (backend, frontend):
-        if p.poll() is None:
-            p.terminate()
-    for p in (backend, frontend):
-        try:
-            p.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            p.kill()
+    if backend.poll() is None:
+        backend.terminate()
+    try:
+        backend.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        backend.kill()
     print("Stopped.")

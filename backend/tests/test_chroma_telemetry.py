@@ -6,7 +6,9 @@ from types import SimpleNamespace
 
 
 def test_chroma_client_never_calls_posthog_capture(tmp_path, monkeypatch, caplog):
-    import posthog
+    import pytest
+
+    posthog = pytest.importorskip("posthog", reason="installed chromadb does not depend on posthog")
     from chromadb.telemetry.product import ProductTelemetryClient
     import backend.memory.chroma_client as mod
 

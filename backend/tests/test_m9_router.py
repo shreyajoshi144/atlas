@@ -360,7 +360,7 @@ def test_an_atlasbench_run_is_unaffected_by_an_active_fallback_policy(repository
     from backend.bench.service import BenchService
     from backend.tests.bench_fixtures import ScriptedLLM
 
-    monkeypatch.setattr("backend.core.llm.time.sleep", lambda s: None)       # the verifier's existing 429 backoff, not under test
+    monkeypatch.setattr("backend.core.retry.time.sleep", lambda s: None)       # the verifier's existing 429 backoff, not under test
     calls: list[str] = []
 
     class Flaky(ScriptedLLM):
@@ -424,7 +424,7 @@ def test_a_rate_limit_with_fallback_is_absorbed_before_any_retry_sleep(repositor
 
 def test_without_fallback_the_existing_retry_loop_still_retries_and_each_try_is_recorded(repository, alice, monkeypatch):
     h = Harness(repository, {BIG: [Http(429), ok()]})
-    monkeypatch.setattr("backend.core.llm.time.sleep", lambda s: None)
+    monkeypatch.setattr("backend.core.retry.time.sleep", lambda s: None)
     with routing_scope(alice, "research"):
         out = invoke_with_retry(h.llm, MSG)
     rows = h.rows(alice)

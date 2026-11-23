@@ -1,0 +1,21 @@
+services:
+  atlas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: atlas:latest
+    container_name: atlas
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    environment:
+      PORT: "7860"
+      ATLAS_DATA_DIR: /home/user/app/data
+    volumes:
+      - atlas_data:/home/user/app/data
+    restart: unless-stopped
+    init: true
+
+volumes:
+  atlas_data:

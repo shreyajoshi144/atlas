@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from backend.analytics.metrics_service import MetricsService
 from backend.auth.dependencies import get_current_user

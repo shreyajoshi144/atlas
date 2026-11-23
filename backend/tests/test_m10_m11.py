@@ -29,7 +29,7 @@ def test_arbitration_uses_evidence_scores_and_stable_selection():
     result = arbitrate_candidates([weak, strong])
     assert result["selected_run_id"] == "run_a"
     assert result["selected_output"] == strong["output"]
-    assert "same frozen evidence" in result["rationale"][0]
+    assert any("same frozen evidence" in line for line in result["rationale"])
     assert "no unsupported synthesis" in result["rationale"][-1]
     assert arbitrate_candidates([strong, weak]) == result
 

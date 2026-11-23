@@ -294,9 +294,7 @@ def test_a_run_that_does_not_complete_reports_success_false_and_leaks_nothing(ap
 def test_unexpected_errors_are_sanitised(app, monkeypatch):
     from backend.bench.service import BenchService
 
-    from types import SimpleNamespace
-
-    monkeypatch.setattr("backend.core.errors.get_settings", lambda: SimpleNamespace(app_env="production"))   # development deliberately shows detail
+    # safe_server_error no longer depends on the environment: the detail is a fixed label in every mode.
     monkeypatch.setattr(BenchService, "overview", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("db password=hunter2 at /srv/secret.db")))
     resp = app["c"].get(f"{BASE}/overview", headers=app["ha"])
     assert resp.status_code == 500 and "hunter2" not in resp.text and "/srv" not in resp.text and "try again" in resp.text

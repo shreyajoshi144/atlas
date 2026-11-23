@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,7 +12,6 @@ from backend.core.errors import safe_server_error
 from backend.core.logging import get_logger
 from backend.core.untrusted_content import wrap_untrusted_content
 from backend.database import ResearchRepository
-from backend.models.domain_models import ChatMessage
 from backend.models.response_models import ApiResponse
 from backend.ops.repository import UsageLimitExceeded
 from backend.playground.repository import PlaygroundRepository

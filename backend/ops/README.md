@@ -12,7 +12,7 @@ UPDATE users SET role = 'admin', updated_at = CURRENT_TIMESTAMP WHERE email = 'o
 ```
 
 Do not expose role changes through public registration or user-facing account APIs. Admin-only
-endpoints are under `/api/admin`: `/monitoring`, `/users`, `/users/{user_id}/limits`, and `/audit`.
+endpoints are under `/api/admin`: `/monitoring`, `/metrics` (request counts, 4xx/5xx errors and p50/p95 latency per route template, per process), `/users`, `/users/{user_id}/limits`, and `/audit`.
 Every request checks the current database role server-side.
 
 Production must set `APP_ENV=production`, a unique randomly generated `SECRET_KEY` of at least 32
@@ -61,3 +61,11 @@ cost are treated as unknown because older versions could not distinguish them fr
 only a generic ready/unavailable status. The operational monitoring response is metadata-only and
 does not include prompts, completions, secrets, or raw traces. Admin audit rows cannot be updated
 or deleted through SQLite statements.
+
+
+## App-wide spend ceiling
+
+`GLOBAL_MONTHLY_LLM_SPEND_CAP_USD` (optional, recommended for any public deployment) bounds total model
+spend across **all** accounts for the UTC calendar month. It is checked in the same write transaction as
+the per-user limits, uses the same accounting (the larger of estimated and actual cost per event), and
+refuses calls whose cost cannot be estimated while it is set. Per-user caps alone scale with sign-ups.

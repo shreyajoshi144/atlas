@@ -209,11 +209,11 @@ async def get_report(
         swot: dict[str, list[str]] = {}
         try:
             key_statistics = json.loads(row.get("key_statistics_json") or "[]")
-        except Exception:
+        except (ValueError, TypeError):
             pass
         try:
             swot = json.loads(row.get("swot_json") or "{}")
-        except Exception:
+        except (ValueError, TypeError):
             pass
 
         report_resp = ResearchReportResponse(

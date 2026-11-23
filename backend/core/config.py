@@ -3,7 +3,8 @@ import math
 import os
 from pathlib import Path
 from typing import Literal, Optional
-from pydantic import Field
+import re
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -106,6 +107,20 @@ class Settings(BaseSettings):
 
     sentry_dsn: Optional[str] = None
 
+    # Who may embed the frontend pages in an iframe (CSP frame-ancestors). Default: nobody.
+    # Hugging Face Spaces shows the app inside huggingface.co, so deploy/start_space.sh sets
+    # "https://huggingface.co https://*.hf.space". API responses are never embeddable.
+    frame_ancestors: str = Field(default="'none'", alias="FRAME_ANCESTORS")
+
+    @field_validator("frame_ancestors")
+    @classmethod
+    def _check_frame_ancestors(cls, v: str) -> str:
+        tokens = v.split()
+        ok = re.compile(r"^('none'|'self'|https://(\*\.)?[A-Za-z0-9.-]+(:\d+)?)$")
+        if not tokens or ("'none'" in tokens and len(tokens) > 1) or not all(ok.match(t) for t in tokens):
+            raise ValueError("FRAME_ANCESTORS must be 'none', 'self' or space-separated https:// origins")
+        return " ".join(tokens)
+
     # Auth
     secret_key: str = Field(default="dev-insecure-secret-change-me-in-.env", alias="SECRET_KEY")
     access_token_expire_minutes: int = Field(default=60 * 24 * 7, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
@@ -113,13 +128,13 @@ class Settings(BaseSettings):
     # Used only to build the link logged/emailed for password reset — no
     # email provider is configured, so this just needs to point at wherever
     # the frontend is actually served from.
-    frontend_base_url: str = Field(default="http://localhost:5500", alias="FRONTEND_BASE_URL")
+    frontend_base_url: str = Field(default="http://localhost:7860", alias="FRONTEND_BASE_URL")
 
     # CORS — comma-separated explicit origin list. Only enforced in
     # production (see validate_production_config / main.py); development
     # keeps allowing "*" so nothing extra is required to run this locally.
     cors_allowed_origins: str = Field(
-        default="http://localhost:5500,http://127.0.0.1:5500",
+        default="http://localhost:7860,http://127.0.0.1:7860",
         alias="CORS_ALLOWED_ORIGINS",
     )
 
@@ -136,6 +151,9 @@ class Settings(BaseSettings):
     # these defaults apply to every account without an override.
     default_daily_llm_call_limit: int = Field(default=1000, ge=0, alias="DEFAULT_DAILY_LLM_CALL_LIMIT")
     default_monthly_llm_spend_cap_usd: float | None = Field(default=None, ge=0.0, alias="DEFAULT_MONTHLY_LLM_SPEND_CAP_USD")
+    # App-wide ceiling across ALL accounts for the calendar month (UTC). Per-user caps alone
+    # scale with sign-ups; this bounds total spend on the operator's provider keys. Unset = no ceiling.
+    global_monthly_llm_spend_cap_usd: float | None = Field(default=None, ge=0.0, alias="GLOBAL_MONTHLY_LLM_SPEND_CAP_USD")
 
     # Optional abstention threshold for AtlasBench output arbitration. This is
     # a measured composite-score floor, not a confidence probability. Zero

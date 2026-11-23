@@ -6,7 +6,7 @@ import traceback
 import json
 from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from backend.auth.dependencies import get_current_user
 from backend.auth.rate_limit import rate_limit_by_user, acquire_research_run, release_research_run
@@ -341,8 +341,8 @@ async def run_research(
                 topic_id_for_resp = repository.topics.get_or_create_topic(
                     request.topic, user_id=current_user["user_id"]
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Topic persistence failed", extra={"error_type": type(exc).__name__})
 
         report_resp = ResearchReportResponse(
             report_id=report.report_id,

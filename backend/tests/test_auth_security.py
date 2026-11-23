@@ -388,3 +388,28 @@ def test_reset_token_not_stored_raw(repository):
     assert record is not None
     assert record["token_hash"] != raw_token
     assert raw_token not in record.values()
+
+
+# ── Regression: local .env must not override explicitly supplied settings ─
+def test_settings_ignore_local_dotenv_so_explicit_secret_is_honoured(isolated_paths, tmp_path, monkeypatch):
+    import secrets as _secrets
+
+    from backend.core.config import Settings, validate_production_config
+
+    (tmp_path / ".env").write_text("SECRET_KEY=changeme\n")
+    monkeypatch.chdir(tmp_path)
+    key = _secrets.token_urlsafe(48)
+    settings = Settings(app_env="production", secret_key=key,
+                        cors_allowed_origins="https://atlas.example.com",
+                        default_monthly_llm_spend_cap_usd=25.0)
+    assert settings.secret_key == key
+    validate_production_config(settings)
+
+
+def test_secret_validator_accepts_urlsafe_tokens_without_weakening_weak_key_rejection():
+    import secrets as _secrets
+
+    from backend.core.config import _is_insecure_secret_key
+
+    assert not any(_is_insecure_secret_key(_secrets.token_urlsafe(48)) for _ in range(500))
+    assert _is_insecure_secret_key("changeme" * 6) and _is_insecure_secret_key("0123456789" * 5)

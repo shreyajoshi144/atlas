@@ -4,16 +4,8 @@
 const Atlas = {};
 
 Atlas.config = {
-  get apiBase() {
-    const stored = localStorage.getItem('atlas_api_base');
-    if (stored) return stored;
-    if (window.ATLAS_API_BASE) return String(window.ATLAS_API_BASE).replace(/\/$/, '') + (String(window.ATLAS_API_BASE).endsWith('/api') ? '' : '/api');
-    // Smart default: local dev talks to localhost:8000, a deployed build assumes
-    // the API is served from the same origin under /api unless configured otherwise.
-    const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname) || location.hostname === '';
-    return isLocalHost ? ('http://' + (location.hostname || '127.0.0.1') + ':8000/api') : (location.origin + '/api');
-  },
-  set apiBase(v) { localStorage.setItem('atlas_api_base', v); },
+  // Same origin by default (port 7860 locally, in Docker and on Spaces); see js/config.js.
+  get apiBase() { return window.AtlasApi.resolveBase(window.ATLAS_API_BASE, location.origin); },
 };
 
 /* ── Auth: token + user stored together, attached to every API call below ──
@@ -25,6 +17,7 @@ Atlas.auth = {
     try { return JSON.parse(this._backend().getItem('atlas_auth') || 'null')?.token || null; }
     catch { return null; }
   },
+  get remember() { return localStorage.getItem('atlas_remember') !== '0'; },
   get user() {
     try { return JSON.parse(this._backend().getItem('atlas_auth') || 'null')?.user || null; }
     catch { return null; }
@@ -118,7 +111,10 @@ function mdToHtml(md) {
            .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
   src = src.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
   src = src.replace(/`([^`]+)`/g, '<code>$1</code>');
-  src = src.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  src = src.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const ok = safeUrl(href.replace(/&amp;/g, '&'));
+    return ok ? `<a href="${escapeAttr(ok)}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
+  });
   // lists — ordered (1. 2. 3.) and unordered (-/*) tracked separately so they
   // don't get merged into the wrong list type when both appear in one report
   src = src.replace(/^\d+\.\s+(.*)$/gm, '<oli>$1</oli>');
@@ -438,6 +434,7 @@ async function viewHome(main, ctx) {
         </div>
         <div class="ov-cta"><button class="btn" id="ovNew">Open a research case</button></div>
       </header>
+      <div class="ov-kpis" id="ovKpis" hidden></div>
       <div class="ov-grid">
         <section aria-labelledby="ovActTitle">
           <div class="ov-sec-title"><h2 id="ovActTitle">Recent activity</h2><span class="small muted" id="ovCount"></span></div>
@@ -461,6 +458,18 @@ async function viewHome(main, ctx) {
   if (reports === undefined && convos === undefined) {
     box.innerHTML = emptyState('!', 'Recent activity is unavailable', 'Atlas could not reach the server. Your work is not lost; try again in a moment.');
     return;
+  }
+  const recent = (reports && reports.reports) || [];
+  const scored = recent.filter(r => typeof r.verification_score === 'number');
+  const kpiBox = $('#ovKpis');
+  if (kpiBox) {
+    const cards = [
+      ['Research cases', fmtNum(reports && reports.total != null ? reports.total : recent.length), 'in your Library'],
+      ['Playground conversations', fmtNum(((convos && convos.items) || []).length), 'saved'],
+    ];
+    if (scored.length) cards.push(['Average verification', fmtPct(scored.reduce((t, r) => t + r.verification_score, 0) / scored.length), `across your ${scored.length} latest case${scored.length === 1 ? '' : 's'}`]);
+    kpiBox.innerHTML = cards.map(k => `<div class="kpi-card"><small>${escapeHtml(k[0])}</small><b>${escapeHtml(k[1])}</b><span>${escapeHtml(k[2])}</span></div>`).join('');
+    kpiBox.hidden = false;
   }
   const items = [
     ...((reports && reports.reports) || []).map(r => ({ kind: 'case', id: r.report_id, title: r.topic, when: r.created_at, meta: `${fmtDate(r.created_at)} · ${verdictLabel(r.verification_verdict)}` })),
@@ -750,7 +759,7 @@ function artifactCard(s) {
       <span>PUBLISHED <b style="color:var(--ink)">${s.publish_date ? escapeHtml(formatPublicationDate(s.publish_date)) : 'Unknown'}</b></span>
       <span>RELEVANCE <b style="color:var(--ink)">${s.relevance_score!=null?s.relevance_score.toFixed(2):'—'}</b></span>
       <span>CREDIBILITY <b style="color:var(--ink)">${s.credibility_score!=null?s.credibility_score.toFixed(2):'—'}</b></span>
-      <a href="${s.url}" target="_blank" rel="noopener" style="color:${c};">VIEW SOURCE ↗</a>
+      ${safeUrl(s.url) ? `<a href="${escapeAttr(safeUrl(s.url))}" target="_blank" rel="noopener noreferrer" style="color:${c};">VIEW SOURCE ↗</a>` : ''}
     </div>
   </div>`;
 }
@@ -764,7 +773,7 @@ function claimRow(claim) {
       <span>Confidence <b style="color:${c};">${fmtPct(claim.confidence)}</b></span>
     </div>
     ${evidence.length ? `<div class="claim-evidence">
-      ${evidence.map(ev => `<a href="${escapeAttr(ev.url||'#')}" target="_blank" rel="noopener noreferrer" class="claim-evidence-item">
+      ${evidence.map(ev => `<a href="${escapeAttr(safeUrl(ev.url)||'#')}" target="_blank" rel="noopener noreferrer" class="claim-evidence-item">
         <span class="claim-evidence-strength" style="color:${scoreColor(ev.evidence_strength)};">${fmtPct(ev.evidence_strength)}</span>
         <span class="claim-evidence-text">"${escapeHtml(truncate(ev.evidence_text||'', 160))}" <span class="claim-evidence-source">— ${escapeHtml(ev.title || 'source')}${ev.publish_date ? ` · Published ${escapeHtml(formatPublicationDate(ev.publish_date))}` : ''} ↗</span></span>
       </a>`).join('')}
@@ -965,7 +974,7 @@ function researchInsightsPanel(c) {
   if (!i) return `<div class="small muted">Loading evidence analysis…</div>`;
   const bucket = (title, color, data) => `<div class="card" style="margin-bottom:10px;border-left:3px solid ${color};">
     <div class="flex between"><div class="field-label" style="color:${color};">${title}</div><b style="font-family:var(--mono);color:${color};">${data?.count ?? 0}</b></div>
-    ${(data?.sources || []).length ? `<div class="small muted mt-8">${data.sources.map(s => `<a href="${escapeAttr(s.url)}" target="_blank" rel="noopener" style="color:var(--ink2);display:block;margin:4px 0;">${escapeHtml(s.title || s.domain || 'Source')} ↗</a>`).join('')}</div>` : `<div class="small muted mt-8">No verified source links in this category.</div>`}
+    ${(data?.sources || []).length ? `<div class="small muted mt-8">${data.sources.map(s => `<a href="${escapeAttr(safeUrl(s.url)||'#')}" target="_blank" rel="noopener noreferrer" style="color:var(--ink2);display:block;margin:4px 0;">${escapeHtml(s.title || s.domain || 'Source')} ↗</a>`).join('')}</div>` : `<div class="small muted mt-8">No verified source links in this category.</div>`}
   </div>`;
   const c0 = i.conclusion || {};
   return `<div class="field-label" style="margin-bottom:8px;">Contradiction & disagreement</div>
@@ -1289,7 +1298,7 @@ function renderCaseHealth(ctx, c) {
     <div class="s-section">
       <div class="s-title">Top sources</div>
       ${topSources.length ? topSources.map(s => `
-        <a href="${escapeAttr(s.url||'#')}" target="_blank" rel="noopener noreferrer" class="flex between landmark-link" style="padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;">
+        <a href="${escapeAttr(safeUrl(s.url)||'#')}" target="_blank" rel="noopener noreferrer" class="flex between landmark-link" style="padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;">
           <div style="min-width:0;">
             <div class="small" style="color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">${escapeHtml(s.title||s.domain||'Source')}</div>
             <div class="small muted" style="font-family:var(--mono);font-size:10px;">${escapeHtml(s.domain||'')} · ${s.publish_date ? escapeHtml(formatPublicationDate(s.publish_date)) : 'Published date unknown'} ↗</div>
@@ -1410,7 +1419,7 @@ function renderLandscape(mount, c) {
   // source boxes — wrapped in a real <a> so clicking opens the actual source
   sources.forEach((s, i) => {
     const x = srcXs[i], col = scoreHex(s.final_score), bw = srcBoxW;
-    const href = s.url ? escapeAttr(s.url) : null;
+    const href = safeUrl(s.url) ? escapeAttr(safeUrl(s.url)) : null;
     const openTag = href ? `<a href="${href}" target="_blank" rel="noopener noreferrer" class="ls-node-link">` : '<g>';
     const closeTag = href ? '</a>' : '</g>';
     svg += `${openTag}<g class="ls-node">
@@ -1457,6 +1466,12 @@ function statusHex(status) {
 function truncate(s, n) { s = s || ''; return s.length > n ? s.slice(0, n-1) + '…' : s; }
 function escapeXml(s) { return escapeHtml(s); }
 function escapeAttr(s) { return escapeHtml(s); }
+
+// Only http(s) URLs may reach an href; anything else (javascript:, data:, ...) is dropped.
+function safeUrl(u) {
+  const v = String(u == null ? '' : u).trim();
+  return /^https?:\/\//i.test(v) ? v : '';
+}
 
 async function fetchNearbyCases(c) {
   const mount = document.getElementById('nearbyCasesRow');
@@ -1513,6 +1528,7 @@ function viewHistory(main, ctx) {
     $('#hList').innerHTML = skeletonBlock('90px') + skeletonBlock('90px');
     try {
       const data = await apiGet('/history/reports', params);
+      if (!$('#hList')) return;   // the user left this view while the request was in flight
       const reports = data?.data?.reports || [], total = data?.data?.total ?? reports.length;
       if (!reports.length) { $('#hList').innerHTML = emptyState('§', 'No research yet', 'Run your first case from the workspace.'); return; }
       const sort = $('#hSort').value;
@@ -1521,7 +1537,7 @@ function viewHistory(main, ctx) {
       // 'newest' is already the backend's default order
       $('#hList').innerHTML = `<div class="small muted" style="font-family:var(--mono);margin-bottom:10px;">SHOWING <b style="color:var(--wine)">${reports.length}</b> OF ${total}</div>` +
         reports.map(r => recentCaseCard(r, { deletable: true })).join('');
-    } catch (e) { console.error('load history failed:', e); $('#hList').innerHTML = emptyState('!', 'Could not load your cases', 'Please try again in a moment.'); }
+    } catch (e) { console.error('load history failed:', e); const list = $('#hList'); if (list) list.innerHTML = emptyState('!', 'Could not load your cases', 'Please try again in a moment.'); }
   };
   $('#hFilter').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
   $('#hLimit').addEventListener('change', load);
@@ -2057,7 +2073,7 @@ async function bootstrapSession() {
     const res = await fetch(Atlas.config.apiBase + '/auth/me', { headers: { 'Authorization': 'Bearer ' + stored } });
     if (!res.ok) throw new Error('invalid session');
     const json = await res.json();
-    Atlas.auth.set(stored, json.data);
+    Atlas.auth.set(stored, json.data, Atlas.auth.remember);   // keep the sign-in choice (session vs persistent)
     applyAuthedUser(json.data);
     hideAuthGate();
     bootApp();

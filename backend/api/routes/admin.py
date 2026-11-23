@@ -9,6 +9,7 @@ from pydantic import Field
 from backend.auth.dependencies import require_admin_user
 from backend.core.config import get_settings
 from backend.core.errors import safe_server_error
+from backend.core import metrics
 from backend.core.logging import get_logger
 from backend.database import ResearchRepository
 from backend.models.common import BaseSchema
@@ -46,6 +47,11 @@ def monitoring(days: Annotated[int, Query(ge=1, le=90)] = 30,
     data = _run("Loading operational monitoring", lambda: _repo().monitoring(since))
     data["window_days"] = days
     return ApiResponse(success=True, message="Operational monitoring", data=data)
+
+
+@router.get("/metrics", response_model=ApiResponse[dict[str, Any]])
+def request_metrics(admin: dict = Depends(require_admin_user)):
+    return ApiResponse(success=True, message="Request metrics", data=metrics.snapshot())
 
 
 @router.get("/users", response_model=ApiResponse[dict[str, Any]])

@@ -11,6 +11,13 @@ from __future__ import annotations
 import os
 import tempfile
 
+# Hermetic settings: never read a developer's git-ignored local .env. Pydantic resolves the
+# SECRET_KEY alias from .env ahead of a ``secret_key=`` keyword, so a weak local key silently
+# overrode the keys the production-config tests construct. Tests set env vars explicitly instead.
+from backend.core.config import Settings as _Settings  # noqa: E402
+
+_Settings.model_config["env_file"] = None
+
 os.environ.setdefault("GROQ_API_KEY", "test_key")
 os.environ.setdefault("TAVILY_API_KEY", "test_key")
 # Application import/startup creates configured runtime directories. Keep the

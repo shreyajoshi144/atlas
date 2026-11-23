@@ -25,6 +25,7 @@ Built with FastAPI, LangGraph, SQLite, ChromaDB and a dependency-free static fro
 - [Project layout](#project-layout)
 - [Security](#security)
 - [Project status](#project-status)
+- [Documentation](#documentation)
 
 ---
 
@@ -134,7 +135,7 @@ flowchart LR
 
 ## Quick start
 
-**Requirements:** Python 3.11+, plus API keys for [Groq](https://console.groq.com) and [Tavily](https://tavily.com). Node.js is optional and only needed for the frontend checks.
+**Requirements:** Python 3.11 or newer (tested on 3.13), plus API keys for [Groq](https://console.groq.com) and [Tavily](https://tavily.com). Node.js is optional and only needed for the frontend checks.
 
 ```sh
 git clone https://github.com/shreyajoshi144/atlas.git
@@ -142,7 +143,7 @@ cd atlas
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt        # add -r requirements-dev.txt to run the tests
 
 cp .env.example .env
 # edit .env: set GROQ_API_KEY, TAVILY_API_KEY and a random SECRET_KEY (32+ chars)
@@ -150,12 +151,12 @@ cp .env.example .env
 python start.py
 ```
 
-`start.py` starts two processes:
+`start.py` starts one server (set `PORT` to change the port; the default is 7860) that serves both:
 
 | Service | URL |
 | --- | --- |
-| Frontend | http://127.0.0.1:5500 (landing page) · `/auth.html` · `/app.html` |
-| API | http://127.0.0.1:8000 · health checks at `/health` and `/ready` · OpenAPI docs at `/docs` |
+| Frontend | http://127.0.0.1:7860 (landing page) · `/auth.html` · `/app.html` |
+| API | http://127.0.0.1:7860/api · health checks at `/health` and `/ready` · OpenAPI docs at `/docs` |
 
 On first start, Atlas creates the SQLite schema and applies additive migrations. Embeddings run locally by default, so `OPENAI_API_KEY` is optional.
 
@@ -173,11 +174,12 @@ All settings are read from `.env`. `.env.example` lists every option, and `backe
 | `APP_ENV` | No | `development` (default), `staging` or `production` |
 | `CORS_ALLOWED_ORIGINS` | Production | Comma-separated list of exact frontend origins, no wildcards |
 | `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` | Production | Monthly budget per user. Startup fails in production without it |
+| `GLOBAL_MONTHLY_LLM_SPEND_CAP_USD` | Recommended for public deployments | App-wide monthly ceiling across **all** accounts. Per-user caps multiply with every sign-up; this bounds total spend on your keys |
 | `DEFAULT_DAILY_LLM_CALL_LIMIT` | No | Daily LLM calls per user (default `1000`) |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `XAI_API_KEY` | No | Turns on that provider in Compare. Providers without a key show as not configured |
 | `ATLAS_DATA_DIR` | No | Base directory for the SQLite and Chroma data (default `./data`) |
 | `SQLITE_PATH` / `CHROMA_PATH` | No | Override the individual store locations |
-| `FRONTEND_BASE_URL` | No | Public frontend URL (default `http://localhost:5500`) |
+| `FRONTEND_BASE_URL` | No | Public frontend URL (default `http://localhost:7860`) |
 
 To run the frontend and API on different origins, set `window.ATLAS_API_BASE` in `frontend/js/config.js`.
 
@@ -212,10 +214,13 @@ The `Dockerfile` builds a single-container image aimed at Hugging Face Spaces:
 
 ```sh
 docker build -t atlas .
-docker run -p 7860:7860 --env-file .env atlas
+docker run --rm -p 7860:7860 --env-file .env -v atlas-data:/home/user/app/data atlas
+# or: docker compose up --build
 ```
 
-Production checklist: `APP_ENV=production`, a unique `SECRET_KEY`, explicit `CORS_ALLOWED_ORIGINS`, a monthly spend cap, and secrets kept in the platform's secret store. Promote admin accounts through the database, as described in [`backend/ops/README.md`](backend/ops/README.md).
+The image runs on both amd64 and arm64. Step-by-step Hugging Face Spaces instructions, storage options and constraints are in the [deployment guide](docs/07-deployment.md).
+
+Production checklist: `APP_ENV=production`, a unique `SECRET_KEY`, explicit `CORS_ALLOWED_ORIGINS`, a per-user monthly spend cap, a global monthly spend cap, and secrets kept in the platform's secret store. Promote admin accounts through the database, as described in [`backend/ops/README.md`](backend/ops/README.md).
 
 ---
 
@@ -247,7 +252,7 @@ The suite includes authorization isolation between users, migrations on fresh an
 ```
 atlas/
 ├── main.py                 FastAPI app, routers, exception handling
-├── start.py                Local launcher (API :8000 + static frontend :5500)
+├── start.py                Local launcher (API + frontend on :7860)
 ├── backend/
 │   ├── api/routes/         HTTP endpoints, one module per area
 │   ├── graph/              LangGraph research workflow (state, nodes, edges)
@@ -268,7 +273,7 @@ atlas/
 │   └── tests/              pytest suites and JS UI tests
 ├── frontend/               Static pages, CSS tokens, JS modules, e2e tests
 ├── deploy/                 Single-origin app and Spaces startup
-└── docs/                   API contracts and release reports
+└── docs/                   Product, architecture, evaluation, testing, history, changelog
 ```
 
 ---
@@ -286,6 +291,23 @@ atlas/
 
 ## Project status
 
-Atlas is a personal engineering project under active development. The offline test suites cover most of the system, but a full check against live providers and a real browser is still outstanding. See [`docs/FINAL_RELEASE_REPORT.md`](docs/FINAL_RELEASE_REPORT.md) for what has and hasn't been verified. Don't treat it as production-ready until that report says so.
+Atlas is a single-instance application: SQLite and a local ChromaDB on one volume, one worker process. It is suited to a demo, a portfolio deployment or a small team, and not to horizontal scaling. The path to scale (Postgres, a hosted vector store, a shared rate limiter, standard JWTs) is listed in [Architecture](docs/02-architecture.md#9-design-decisions-and-trade-offs).
 
-More detail is in [`docs/`](docs/), including the [Compare API contract](docs/COMPARE_API_CONTRACT.md), the [Workflow Studio handoff](docs/WORKFLOW_STUDIO_HANDOFF.md) and the per-batch release reports.
+What has actually been run, and what hasn't, is in the testing notes in [`docs/`](docs/README.md). Live-provider behaviour needs your own API keys, so no model rankings are bundled.
+
+---
+
+## Documentation
+
+| | |
+|---|---|
+| [Product overview](docs/01-product-overview.md) | What Atlas is and who it's for |
+| [Architecture](docs/02-architecture.md) | Diagrams of the pipeline, retrieval, routing, data model, security and deployment |
+| [Evaluation](docs/03-evaluation.md) | AtlasBench, the grounding suite, scoring and statistics |
+| [Testing and results](docs/04-testing-and-results.md) | What was run, actual results, what was not verified |
+| [Development history](docs/05-development-history.md) | Milestones and hardening |
+| [Runbook](docs/06-runbook.md) | Operating a deployment |
+| [Deployment guide](docs/07-deployment.md) | Docker, Compose and Hugging Face Spaces, step by step |
+| [API reference](docs/08-api-reference.md) | Every route, access level and rate limit |
+| [Configuration reference](docs/09-configuration.md) | Every environment variable |
+| [Changelog](docs/CHANGELOG.md) | What changed, by version |

@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import lru_cache
 
 from backend.core.logging import get_logger
-from backend.core.observability import append_trace, classify_error
+from backend.core.observability import append_trace
 from backend.models.common import MetricBreakdown, ResearchStatus
 from backend.models.domain_models import (
     RankedSource,

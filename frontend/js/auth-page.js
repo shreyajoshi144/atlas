@@ -4,12 +4,7 @@
   'use strict';
   var $ = function (s) { return document.querySelector(s); }, $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
-  function apiBase() {
-    var stored = localStorage.getItem('atlas_api_base'); if (stored) return stored;
-    if (window.ATLAS_API_BASE) return String(window.ATLAS_API_BASE).replace(/\/$/, '') + (String(window.ATLAS_API_BASE).endsWith('/api') ? '' : '/api');
-    var local = ['localhost', '127.0.0.1', '::1'].indexOf(location.hostname) !== -1 || location.hostname === '';
-    return local ? 'http://' + (location.hostname || '127.0.0.1') + ':8000/api' : location.origin + '/api';
-  }
+  function apiBase() { return window.AtlasApi.resolveBase(window.ATLAS_API_BASE, location.origin); }
   function saveSession(token, user, remember) {
     localStorage.setItem('atlas_remember', remember ? '1' : '0');
     var active = remember ? localStorage : sessionStorage, other = remember ? sessionStorage : localStorage;

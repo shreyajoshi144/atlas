@@ -6,7 +6,6 @@ import json
 import re
 import ssl
 from datetime import date, datetime
-from email.utils import parsedate_to_datetime
 from typing import Iterable, Optional
 from urllib.parse import urlparse
 

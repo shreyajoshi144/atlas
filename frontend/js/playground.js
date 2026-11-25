@@ -78,6 +78,10 @@
     const pending = P.busy ? `<section class="pg-turn-output"><div class="pg-turn-label">Running ${P.selected.size} model${P.selected.size === 1 ? '' : 's'}</div><div class="pg-output-grid">${[...P.selected].map(model => `<article class="pg-output pg-pending"><header><strong>${esc(P.models.find(m => m.model === model)?.label || model)}</strong><span class="pg-spinner"></span></header><p>Generating a response…</p></article>`).join('')}</div></section>` : '';
     return `<div class="pg-page">
       <div class="pg-page-heading"><div><div class="eyebrow">Compare models</div><h1>AI Playground</h1><p>Ask once, compare model responses, and keep the sources and usage in view.</p></div><button class="btn btn-primary" data-pg-new>＋ New conversation</button></div>
+      <details class="cmp-det cmp-how"><summary>How the Playground works</summary><dl class="cmp-gloss">
+        <div><dt>What it does</dt><dd>Ask one question to up to three models at once and read their answers side by side, with token use, estimated cost and speed.</dd></div>
+        <div><dt>How to use it</dt><dd>Pick two or three models, type a question, and send. Open an earlier conversation from the list on the left.</dd></div>
+        <div><dt>Why it matters</dt><dd>It shows how different models answer the same question before you trust one for research.</dd></div></dl></details>
       ${P.error ? `<div class="pg-warning" role="alert">${esc(P.error)}</div>` : ''}
       <div class="pg-layout">
         <aside class="pg-history card"><div class="pg-side-title"><span>Your conversations</span><span>${P.conversations.length}</span></div><div class="pg-history-list">${history || '<div class="pg-history-empty">Your saved conversations will appear here.</div>'}</div></aside>

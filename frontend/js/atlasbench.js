@@ -334,7 +334,12 @@
     const ov = AB.overview;
     if (!ov) return '';
     const s = (ov.suites || [])[0];
-    return `<div class="small muted">Every task is a question plus a fixed set of documents — nothing is fetched from the web during a run, so any difference between two runs comes from the model or settings, not from the internet. Scoring is rule-based; no AI judges another AI. Costs are estimates.</div>
+    const how = `<details class="cmp-det cmp-how" open><summary>How AtlasBench works</summary><dl class="cmp-gloss">
+      <div><dt>What it is</dt><dd>A fixed exam for AI models. Each task is a question plus a few made-up documents, with a known correct answer. Nothing is fetched from the web, so differences come from the model, not the internet.</dd></div>
+      <div><dt>How a run is scored</dt><dd>Atlas gives every task to a model setup and scores the answers with fixed rules, never another AI. Six measures: right verdict, real citations, quotes that exist in the source, use of the needed sources, conflicts flagged, and sensible tool use.</dd></div>
+      <div><dt>How to use it</dt><dd>1) Configurations: add a model setup. 2) Runs: start a new run. 3) Read the scores. 4) Compare: put two runs side by side. 5) Routing &amp; cost: pick the cheapest model whose scores are good enough, and set spend limits.</dd></div>
+      <div><dt>What the scores mean</dt><dd>1.0 is a perfect answer. A task that crashes counts as zero, so a setup cannot look better by failing quietly.</dd></div></dl></details>`;
+    return how + `<div class="small muted">Every task is a question plus a fixed set of documents — nothing is fetched from the web during a run, so any difference between two runs comes from the model or settings, not from the internet. Scoring is rule-based; no AI judges another AI. Costs are estimates.</div>
       ${s ? `<div class="small muted" style="margin-top:4px;">${esc(s.title)}: ${esc(s.task_count)} tasks · suite hash ${esc(shortHash(s.suite_hash))}</div>` : ''}`;
   }
   function draw() { const r = root(); if (!r) return; r.innerHTML = tabsHtml() + `<div id="abPane"></div>`; drawPane(); }

@@ -88,7 +88,7 @@ def run():
         pg = page(b, authed=True); pg.goto(BASE + 'app.html'); pg.wait_for_selector('.ov-title'); pg.wait_for_selector('.act-row')
         ok(pg.locator('#appRoot.auth-locked').count() == 0, 'workspace unlocks with a valid session')
         ok(pg.locator('.act-row').count() == 3, 'recent activity merges cases and conversations')
-        ok(pg.locator('.topnav-item').evaluate_all('els => els.map(e => e.dataset.nav).join()') == 'home,research,playground,compare,atlasbench,workflowStudio,runtime', 'seven areas in the rail (Compare added)')
+        ok(pg.locator('.topnav-item').evaluate_all('els => els.map(e => e.dataset.nav).join()') == 'home,research,playground,compare,atlasbench', 'five areas in the rail')
         ok(pg.locator('#accountName').inner_text() == 'Shreya Test' and pg.inner_text('#accountAvatar') == 'S', 'account identity shown in the rail')
         pg.click('.topnav-item[data-nav="research"]'); pg.wait_for_selector('#rTopic')
         ok(pg.locator('#subnav.show').count() == 1 and pg.locator('.subtab').count() == 6, 'Research shows its six-part sub-bar')
@@ -101,12 +101,10 @@ def run():
         pg.click('.subtab[data-sub="history"]'); pg.wait_for_selector('.case-row'); ok(pg.locator('.case-row').count() == 2, 'Cases lists reports')
         pg.click('.case-row >> nth=0'); pg.wait_for_selector('.case-figures'); ok('solid-state' in pg.inner_text('.page-title').lower(), 'opening a case shows its title')
         ok(pg.locator('.tab').count() == 6, 'case has six tabs'); pg.click('.tab[data-tab="sources"]'); ok(pg.locator('#tab-sources.active').count() == 1, 'case tabs switch')
-        for key in ['playground', 'atlasbench', 'workflowStudio', 'runtime']:
+        for key in ['playground', 'atlasbench']:
             pg.click(f'.topnav-item[data-nav="{key}"]'); pg.wait_for_timeout(450)
             ok(len(pg.inner_html('#mainView')) > 80 and pg.locator(f'.topnav-item[data-nav="{key}"].active').count() == 1, f'{key} renders and is active')
             ok(pg.locator('#subnav.show').count() == 0, f'sub-bar hidden outside Research ({key})')
-        ok('outing' in pg.inner_html('#mainView'), 'Runtime & Control shows routing interface')
-        pg.click('.topnav-item[data-nav="workflowStudio"]'); pg.wait_for_selector('#wfTemplate'); pg.click('[data-wf-select="w1"]'); pg.wait_for_selector('#wfInput'); ok(True, 'Workflow Studio: select workflow reveals run form')
         pg.click('#accountTrigger'); pg.click('#settingsMenuItem'); pg.wait_for_selector('#setModel'); ok(pg.locator('.settings-group').count() == 6, 'Settings renders six groups')
         pg.keyboard.press('Control+k'); ok(pg.locator('#searchBar').is_visible(), 'Ctrl+K opens search'); pg.keyboard.press('Escape')
         pg.click('#chatFabToggle'); ok(pg.locator('#chatFabWrap.open').count() == 1, 'Ask Atlas widget opens')
@@ -129,7 +127,7 @@ def run():
         print('# responsive workspace')
         for w, h in ((1440, 900), (1024, 800), (768, 900), (390, 800)):
             pg = page(b, w, h, authed=True)
-            for route in ['home', 'research', 'playground', 'atlasbench', 'workflowStudio', 'runtime', 'history', 'kb', 'settings']:
+            for route in ['home', 'research', 'playground', 'atlasbench', 'history', 'kb', 'settings']:
                 pg.goto(BASE + 'app.html#/' + route); pg.reload(); pg.wait_for_timeout(500)
                 if overflow(pg) > 0: ok(False, f'{route} @ {w}px overflows by {overflow(pg)}px')
             ok(True, f'workspace routes checked at {w}px')

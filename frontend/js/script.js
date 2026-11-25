@@ -2060,6 +2060,10 @@ function applyAuthedUser(user) {
   if (emailEl) emailEl.textContent = user.email || '';
 }
 
+/* Back/forward cache: after signing out, the Back button could restore the previous user's page
+   from memory. A restored page is always reloaded so it re-checks who is signed in. */
+window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
+
 function handleLogout() {
   Atlas.auth.clear();
   Atlas.state.activeCase = null;

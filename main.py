@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
@@ -59,11 +60,18 @@ async def lifespan(app: FastAPI):
     logger.info("Atlas AI API stopped")
 
 
+# Interactive API docs are public documentation of every route; keep them off in
+# production unless explicitly enabled with ENABLE_API_DOCS=true.
+_docs_enabled = get_settings().app_env != "production" or os.environ.get("ENABLE_API_DOCS", "").lower() == "true"
+
 app = FastAPI(
     title="Atlas AI API",
     description="Backend API for Atlas AI Research Intelligence Platform",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
 
 # Correlate every HTTP response with structured server logs.

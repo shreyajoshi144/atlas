@@ -18,8 +18,10 @@ COPY --chown=user requirements.txt .
 RUN pip install --user torch --index-url https://download.pytorch.org/whl/cpu \
  && pip install --user -r requirements.txt
 
-# Bake the embedding model into the image so startup never needs the network.
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+# Use the ONNX build of the embedding model (no PyTorch at run time) so the app fits in 512 MB.
+# Bake it into the image so startup never needs the network.
+ENV ATLAS_EMBEDDING_BACKEND=onnx
+RUN python -c "from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2; ONNXMiniLM_L6_V2()(['warm up'])"
 
 COPY --chown=user . .
 RUN mkdir -p data/sqlite data/chroma data/logs

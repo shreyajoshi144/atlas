@@ -34,8 +34,8 @@ _NOOP_TELEMETRY_IMPL = f"{NoOpProductTelemetry.__module__}.{NoOpProductTelemetry
 
 def _get_embedding_function():
     try:
-        from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-        return SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        from backend.memory.embedding_service import make_embedding_function
+        return make_embedding_function("all-MiniLM-L6-v2")[0]
     except Exception:
         return None
 

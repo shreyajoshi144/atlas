@@ -30,6 +30,24 @@ def _configured_retry_seconds() -> float:
         return 300.0
 
 
+def make_embedding_function(model_name: str):
+    """Return ``(embedding_fn, mode)``.
+
+    ATLAS_EMBEDDING_BACKEND=onnx uses Chroma's ONNX build of the same all-MiniLM-L6-v2 model
+    (384-dim, no PyTorch), which keeps a small container under 512 MB. The default keeps
+    sentence-transformers.
+    """
+    import os
+
+    if os.environ.get("ATLAS_EMBEDDING_BACKEND", "").strip().lower() == "onnx":
+        from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
+
+        return ONNXMiniLM_L6_V2(), "onnx"
+    from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+
+    return SentenceTransformerEmbeddingFunction(model_name=model_name), "sentence_transformers"
+
+
 class EmbeddingService:
     """
     Free local embeddings using chromadb's built-in sentence-transformers.
@@ -41,9 +59,7 @@ class EmbeddingService:
         self._dimension: Optional[int] = None
         # Import lazily so startup doesn't fail if sentence-transformers isn't installed
         try:
-            from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-            self._fn = SentenceTransformerEmbeddingFunction(model_name=self._model_name)
-            self._mode = "sentence_transformers"
+            self._fn, self._mode = make_embedding_function(self._model_name)
         except ImportError as exc:
             # The package itself isn't installed — this is the exact bug that
             # previously broke Ask Atlas (chat) and Discover (semantic search)

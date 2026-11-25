@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import hashlib
 import math
 import re
@@ -88,7 +90,10 @@ class RankingService:
         self._use_dense = use_dense
 
     def _embedder(self):
-        if not self._use_dense:
+        # ATLAS_DENSE_RANKING=0 turns off embedding-based ranking (BM25 + lexical signals only).
+        # Used on very small instances (0.1 CPU / 512 MB) where embedding a result pool takes ~25 s
+        # and can exhaust memory.
+        if not self._use_dense or os.environ.get("ATLAS_DENSE_RANKING", "1").strip() == "0":
             return None
         if self._embedding_service is not None:
             return self._embedding_service

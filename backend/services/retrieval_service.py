@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from backend.core.logging import get_logger
 from backend.models.domain_models import RankedSource, SearchResult
 from backend.services.ranking_service import RankingService, RetrievedSource
@@ -23,6 +25,10 @@ class RetrievalService:
         top_k: int = 5,
         research_mode: str = "explore",
     ) -> tuple[list[SearchResult], list[RankedSource]]:
+        # ATLAS_MAX_TOP_K caps result counts on small instances (pool is 2x top_k).
+        cap = int(os.environ.get("ATLAS_MAX_TOP_K", "0") or 0)
+        if cap > 0:
+            top_k = min(top_k, cap)
         pool_size = max(top_k * 2, 10)
         search_results = self._search_for_mode(query, pool_size, research_mode)
 

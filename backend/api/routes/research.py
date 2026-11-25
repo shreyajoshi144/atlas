@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import asyncio
 import time
 import traceback
@@ -84,6 +86,12 @@ async def run_research(
     current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[ResearchRunResponse]:
     acquire_research_run(current_user["user_id"])
+    # ATLAS_LIGHT_MODE=1 (tiny hosts): skip the slow, memory-heavy vector indexing and the optional
+    # executive-brief call so the run finishes quickly and the process is not restarted mid-request.
+    # Reports are still saved to the database and shown in the Library.
+    light_mode = os.environ.get("ATLAS_LIGHT_MODE", "").strip() == "1"
+    if light_mode:
+        request.include_executive_brief = False
     try:
         # "Research this question": if this run was triggered from a
         # derived unanswered question, source_report_id names where it
@@ -271,6 +279,8 @@ async def run_research(
                         extra={"error": str(trace_exc), "session_id": session.session_id},
                     )
                 try:
+                    if light_mode:
+                        raise RuntimeError("vector indexing skipped (light mode)")
                     _vector_memory().index_report(
                         topic_id=topic_id,
                         session=session,

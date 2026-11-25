@@ -20,7 +20,7 @@ RUN pip install --user torch --index-url https://download.pytorch.org/whl/cpu \
 
 # Use the ONNX build of the embedding model (no PyTorch at run time) so the app fits in 512 MB.
 # Bake it into the image so startup never needs the network.
-ENV ATLAS_EMBEDDING_BACKEND=onnx ATLAS_DENSE_RANKING=0 ATLAS_MAX_TOP_K=6
+ENV ATLAS_EMBEDDING_BACKEND=onnx ATLAS_DENSE_RANKING=0 ATLAS_MAX_TOP_K=6 ATLAS_LIGHT_MODE=1
 RUN python -c "from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2; ONNXMiniLM_L6_V2()(['warm up'])"
 
 COPY --chown=user . .

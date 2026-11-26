@@ -12,7 +12,7 @@ For whoever deploys or supports Atlas for a team or customer. Everything here us
 | Per-user spend cap | `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` (startup fails without it) |
 | App-wide spend cap | `GLOBAL_MONTHLY_LLM_SPEND_CAP_USD`. Set it for any public deployment. |
 | Provider keys in the secret store | `GROQ_API_KEY`, `TAVILY_API_KEY`, optional OpenAI, Anthropic, Gemini and xAI keys |
-| Persistent storage | `ATLAS_DATA_DIR` on a durable volume. Free Hugging Face disks are wiped on restart; with the paid persistent-storage add-on set `ATLAS_DATA_DIR=/data` (see the [deployment guide](07-deployment.md)). |
+| Persistent storage | `ATLAS_DATA_DIR` on a durable volume. Free Render and Hugging Face disks are wiped on restart; use a paid persistent disk or storage add-on and set `ATLAS_DATA_DIR` to it (see the [deployment guide](07-deployment.md)). |
 | Error tracking (optional) | `SENTRY_DSN`. No PII or request bodies are sent. |
 | First admin | Sign up normally, then promote that account (section 3) |
 
@@ -63,7 +63,11 @@ curl -X PUT "$HOST/api/admin/users/$USER_ID/limits" \
 | Compare shows a provider as "not configured" | Missing or placeholder API key | Add the key. Placeholders such as `your-key-here` count as unset. |
 | Provider calls fail with 429 or timeouts | Provider rate limiting or an outage | Atlas retries with backoff and trips a per-provider circuit breaker. Check the Compare run details for each attempt. Routing fallback only helps if a fallback chain is configured. |
 | Login or signup returns 429 | Auth rate limit (login 10 per minute per IP) | Wait a minute. Behind a proxy, check `FORWARDED_ALLOW_IPS` so clients aren't all seen as one IP. |
-| Users lose data after a restart | Ephemeral disk | Move `ATLAS_DATA_DIR` to a persistent volume |
+| Users lose data after a restart, or sign-in says "invalid" for an account made earlier | Ephemeral disk: the host restarted (deploy, idle spin-down, or killed for memory) and the database was reset | Move `ATLAS_DATA_DIR` to a persistent volume. On a free host set `DEMO_EMAIL` and `DEMO_PASSWORD` so one login always exists, and keep the instance awake with an uptime monitor on `/ready`. |
+| The hosted app restarts during a research run (Render log shows `Instance ... restarted`) | Out of memory on a 512 MB instance | Keep small-host mode on (the Docker image sets it). Do not unset `ATLAS_LIGHT_MODE`, `ATLAS_DENSE_RANKING` or `ATLAS_MAX_TOP_K` on a 512 MB host. See [Small-host mode](07-deployment.md#small-host-mode-512-mb). |
+| First request after idle takes about a minute | Free instance was asleep | Wait, or keep it awake with an uptime monitor |
+| Ask Atlas and Discover find nothing for new reports on the hosted demo | `ATLAS_LIGHT_MODE=1` skips vector indexing | Expected on the small host. Unset it on a larger host. |
+| `/docs` returns 404 in production | API docs are off in production | Set `ENABLE_API_DOCS=true` if you want them |
 | Research run fails mid-way | Search or scrape failure, or the writer returned bad output | The writer gets one bounded recovery call. Otherwise the run reports a clear error. Check logs by request ID. |
 
 ## 5. Onboarding a new team
@@ -77,6 +81,7 @@ curl -X PUT "$HOST/api/admin/users/$USER_ID/limits" \
 
 ## 6. Known limits to tell a customer
 
+- On a free host the disk is wiped at every restart, and a 512 MB host runs in small-host mode (see the [deployment guide](07-deployment.md)).
 - One instance and one worker. Rate limits and metrics are per process and reset on restart.
 - SQLite plus local Chroma, so this isn't for horizontal scaling.
 - Cost figures are estimates from catalog prices and token counts, not invoices. Spend caps are not hard ceilings.

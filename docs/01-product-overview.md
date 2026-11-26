@@ -14,7 +14,7 @@ Atlas has two halves that share one platform.
 |---|---|---|
 | **Question it answers** | "What does the evidence say, and how sure should I be?" | "Which model should answer, and can I prove it?" |
 | **Core idea** | Every claim stays linked to its source and is labelled *supporting*, *uncertain* or *conflicting* | Models are ranked only on measured results from frozen tasks, never on opinion |
-| **Main features** | Research pipeline, source ranking, claim verification, Knowledge Map, Challenge mode, grounded chat | Compare (4 providers), AtlasBench, Cost Autopilot routing, budgets, Workflow Studio |
+| **Main features** | Research pipeline, source ranking, claim verification, Knowledge Map, Challenge mode, grounded chat | Compare (4 providers), Playground, AtlasBench, Cost Autopilot routing (a tab inside AtlasBench), budgets |
 
 ```mermaid
 flowchart LR
@@ -62,8 +62,6 @@ The two halves meet at the routing layer. Quality scores from AtlasBench decide 
 **AtlasBench.** Eight hand-written tasks over frozen, fictional evidence (so models can't answer from memory): clean support, contradiction, abstention, stale sources, prompt injection, multi-hop, numeric nuance and no evidence. Six measures are scored deterministically.
 
 **Cost Autopilot.** A per-user policy picks the cheapest model that meets quality, latency and cost thresholds, using that user's own benchmark results. It falls back only on provider trouble such as timeouts, 429s and 5xx, never on validation errors or bugs.
-
-**Workflow Studio.** User-owned, deterministic text workflows with idempotent execution and saved run history.
 
 ## Scope and honest limits
 

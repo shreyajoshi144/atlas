@@ -603,32 +603,6 @@ CREATE TRIGGER IF NOT EXISTS trg_admin_audit_no_delete
 BEFORE DELETE ON admin_audit_logs BEGIN SELECT RAISE(ABORT, 'audit logs are immutable'); END;
 
 
--- Workflow Studio: user-owned definitions and persisted deterministic executions.
-CREATE TABLE IF NOT EXISTS workflow_definitions (
-  workflow_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL,
-  definition_json TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
-  FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_workflow_def_user ON workflow_definitions(user_id, updated_at);
-CREATE TABLE IF NOT EXISTS workflow_runs (
-  run_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, workflow_id TEXT NOT NULL,
-  idempotency_key TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('running','completed','failed')),
-  input_json TEXT NOT NULL, output_json TEXT, error TEXT, created_at TEXT NOT NULL, finished_at TEXT,
-  definition_snapshot_json TEXT, snapshot_version INTEGER NOT NULL DEFAULT 1,
-  UNIQUE(user_id, workflow_id, idempotency_key),
-  FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY(workflow_id) REFERENCES workflow_definitions(workflow_id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_workflow_runs_user ON workflow_runs(user_id, created_at);
-CREATE TABLE IF NOT EXISTS workflow_run_steps (
-  run_id TEXT NOT NULL, step_index INTEGER NOT NULL, step_name TEXT NOT NULL,
-  step_type TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('completed','failed','skipped')),
-  input_json TEXT NOT NULL, output_json TEXT, error TEXT, started_at TEXT NOT NULL, finished_at TEXT NOT NULL,
-  config_json TEXT NOT NULL DEFAULT '{}',
-  PRIMARY KEY(run_id, step_index), FOREIGN KEY(run_id) REFERENCES workflow_runs(run_id) ON DELETE CASCADE
-);
-
-
 -- Model Compare (multi-provider): owner-scoped run history and prompt-free call telemetry.
 CREATE TABLE IF NOT EXISTS compare_runs (
   run_id TEXT PRIMARY KEY, user_id TEXT NOT NULL,

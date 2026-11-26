@@ -245,13 +245,13 @@ const NAV_LABELS = {
   history: ['Atlas', 'Cases'],
   search: ['Atlas', 'Cases', 'Search'], analytics: ['Atlas', 'Insights'],
   kb: ['Atlas', 'Library'], case: ['Atlas', 'Cases', 'Case'],
-  settings: ['Atlas', 'Settings'], runtime: ['Atlas', 'Runtime & Control'], knowledge: ['Atlas', 'Knowledge'], atlasbench: ['Atlas', 'AtlasBench'], workflowStudio: ['Atlas', 'Workflow Studio'],
+  settings: ['Atlas', 'Settings'], knowledge: ['Atlas', 'Knowledge'], atlasbench: ['Atlas', 'AtlasBench'],
 };
 
 // Information architecture: six areas on the top bar; Research owns its working views as a sub-bar.
 const AREA_OF = {
   home: 'home', research: 'research', history: 'research', kb: 'research', search: 'research', knowledge: 'research', analytics: 'research', case: 'research',
-  playground: 'playground', compare: 'compare', atlasbench: 'atlasbench', workflowStudio: 'workflowStudio', runtime: 'runtime', settings: null,
+  playground: 'playground', compare: 'compare', atlasbench: 'atlasbench', settings: null,
 };
 const RESEARCH_TABS = [['research', 'New case'], ['history', 'Cases'], ['kb', 'Library'], ['search', 'Discover'], ['knowledge', 'Knowledge map'], ['analytics', 'Insights']];
 function renderSubnav(area, navKey) {
@@ -263,11 +263,9 @@ function renderSubnav(area, navKey) {
   bar.querySelectorAll('[data-sub]').forEach(b => b.addEventListener('click', () => Atlas.nav(b.dataset.sub)));
 }
 Atlas.nav = function(view, opts) {
-  // "Runtime & Control" is the Routing & cost tab of AtlasBench (routing.js): its own entry point,
-  // the same backend. AtlasBench itself always opens on its Runs tab.
+  // AtlasBench always opens on its Runs tab; Routing & cost is one of its tabs (routing.js).
   const navKey = view;
-  if (view === 'runtime') { view = 'atlasbench'; opts = Object.assign({}, opts, { tab: 'routing' }); }
-  else if (view === 'atlasbench' && !(opts && opts.tab)) { opts = Object.assign({}, opts, { tab: 'runs' }); }
+  if (view === 'atlasbench' && !(opts && opts.tab)) { opts = Object.assign({}, opts, { tab: 'runs' }); }
   Atlas.state.view = view;
   Atlas.state.navKey = navKey;
   const area = AREA_OF[navKey];
@@ -299,7 +297,7 @@ function render(opts) {
   const main = $('#mainView'), ctx = $('#contextPanel');
   main.innerHTML = ''; ctx.innerHTML = '';
   $('#statusBarCase').textContent = '';
-  const views = { home: viewHome, research: viewResearch, playground: (main, ctx, opts) => window.AtlasPlayground?.render(main, ctx, opts), compare: (main, ctx, opts) => window.AtlasCompare?.render(main, ctx, opts), history: viewHistory, search: viewSearch, analytics: viewAnalytics, kb: viewKB, case: viewCase, settings: viewSettings, knowledge: viewKnowledge, atlasbench: viewAtlasBench, workflowStudio: (main, ctx, opts) => window.viewWorkflowStudio?.(main, ctx, opts) };
+  const views = { home: viewHome, research: viewResearch, playground: (main, ctx, opts) => window.AtlasPlayground?.render(main, ctx, opts), compare: (main, ctx, opts) => window.AtlasCompare?.render(main, ctx, opts), history: viewHistory, search: viewSearch, analytics: viewAnalytics, kb: viewKB, case: viewCase, settings: viewSettings, knowledge: viewKnowledge, atlasbench: viewAtlasBench };
   (views[v] || viewHome)(main, ctx, opts || {});
   $('#appRoot').classList.toggle('ctx-collapsed', !ctx.innerHTML.trim());
 }
@@ -443,7 +441,7 @@ async function viewHome(main, ctx) {
         <aside aria-labelledby="ovBeginTitle">
           <div class="ov-sec-title"><h2 id="ovBeginTitle">Where to begin</h2></div>
           <ul class="begin">
-            ${[['research','Research','Ask a question; get sources, claims and a verified brief.'],['playground','AI Playground','Put one question to up to three models.'],['compare','Compare','Ask OpenAI, Anthropic, Google and xAI the same question and see measured cost, speed and sources.'],['atlasbench','AtlasBench','Score models on a frozen task and evidence.'],['workflowStudio','Workflow Studio','Save and run a deterministic workflow.'],['runtime','Runtime & Control','Choose how models are selected and see what ran.']].map(([k, n, d]) => `<li><button type="button" data-go="${k}"><span><b>${n}</b><span class="d">${d}</span></span><span class="begin-go">→</span></button></li>`).join('')}
+            ${[['research','Research','Ask a question; get sources, claims and a verified brief.'],['playground','AI Playground','Put one question to up to three models.'],['compare','Compare','Ask OpenAI, Anthropic, Google and xAI the same question and see measured cost, speed and sources.'],['atlasbench','AtlasBench','Score models on frozen tasks, compare runs, and set cost-aware routing.']].map(([k, n, d]) => `<li><button type="button" data-go="${k}"><span><b>${n}</b><span class="d">${d}</span></span><span class="begin-go">→</span></button></li>`).join('')}
           </ul>
         </aside>
       </div>
@@ -2107,7 +2105,7 @@ function updateClock() {
 setInterval(updateClock, 30000);
 updateClock();
 setInterval(checkHealth, 20000);
-// Boot only after every deferred view script (playground, knowledge, atlasbench, workflow, routing)
+// Boot only after every deferred view script (playground, knowledge, atlasbench, routing)
 // has executed. Calling this at parse time races the later <script> tags: a fast /auth/me response
 // could render before viewKnowledge etc. exist and wrongly bounce a signed-in user to the login gate.
 if (document.readyState === 'complete') bootstrapSession();

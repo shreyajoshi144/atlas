@@ -1,20 +1,21 @@
 # Testing and results
 
-Everything below was run on 2026-10-30, with the audit on 2026-11-19. Numbers are copied from the actual runs, and anything that was **not** run is listed in [What was not verified](#what-was-not-verified).
+The suites were last re-run on **2026-11-25**, after the final scope change (Workflow Studio removed). Older sections keep the date they were run. Numbers are copied from the actual runs, and anything that was **not** run is listed in [What was not verified](#what-was-not-verified).
 
-**Environment:** macOS (Apple silicon), Python 3.13.5, Node v26.3.0, dependencies installed from `requirements-dev.txt`, no real provider keys, `APP_ENV=development`.
+**Environment:** macOS (Apple silicon), Python 3.13, Node, dependencies installed from `requirements-dev.txt`, no provider calls in the test suites, `APP_ENV=development`.
 
 ## Results at a glance
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest) | `python -m pytest -q` | **1,252 passed, 4 skipped, 0 failed** (about 135 s) |
+| Backend (pytest) | `python -m pytest -q` | **1,244 passed, 4 skipped, 0 failed** (2 to 4 minutes) |
 | Provider suite (stdlib `unittest`) | `python -m unittest discover -s backend/providers/tests -t .` | **121 tests, OK** (about 42 s) |
-| Browser end-to-end (Playwright, run as scripts) | `python frontend/tests/e2e/test_compare_e2e.py` and `test_frontend_e2e.py` | Compare **42/42**. Frontend **113/113** |
-| Frontend unit tests (Node) | `node backend/tests/js/*.test.js` | **9 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Playground 12, Routing 14, link safety 4, API base 6, session persistence 5, Workflow Studio 8) |
+| Browser end-to-end (Playwright, run as scripts) | `python frontend/tests/e2e/test_compare_e2e.py` and `test_frontend_e2e.py` | Last full run on 2026-11-23: Compare **42/42**, Frontend **113/113**. **Not re-run since the 2026-11-25 menu change**: the scripts were updated for the five-area menu, but Playwright was not installed in the environment used that day. |
+| Frontend unit tests (Node) | `node backend/tests/js/*.test.js` | **8 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Playground 12, Routing 14, link safety 4, API base 6, session persistence 5) |
 | Frontend syntax | `node --check frontend/js/*.js` | All files pass |
 | Python compile | `python -m compileall backend main.py start.py deploy` | Passes |
-| App boot | Start the real FastAPI app | `/ready` 200, `/health` `ok` with the real embedding model loaded |
+| App boot | Start the real FastAPI app | `/ready` 200, `/health` `ok` with the embedding model loaded |
+| Small-host research run | Real app with the Docker image's four small-host settings, real Groq and Tavily keys | Research completed in about 40 to 65 s over three local runs; peak memory was about 210 MB (measured with the ranking and source-cap settings, before light mode was added); with light mode the report appeared in the Library and the same account could sign in again |
 
 ## Test layers
 
@@ -43,7 +44,7 @@ Providers are never called for real: tests use scripted fake clients and, for th
 
 | Area | Examples of what is asserted |
 |---|---|
-| **Authorization and isolation** | One user cannot read or change another user's research, notes, Playground conversations, workflows, benchmark runs or routing policies |
+| **Authorization and isolation** | One user cannot read or change another user's research, notes, Playground conversations, benchmark runs or routing policies |
 | **Auth and API security** | Argon2id hashing and legacy-hash migration, token tampering and expiry, rate limits, admin-only routes, generic errors, security headers, request-size cap, SSRF blocking |
 | **Retrieval** | BM25, dense search, rank fusion, reranking and metadata filters |
 | **Knowledge Map and Challenges** | Stable IDs, claim change tracking, freshness, the six challenge types and state machine |
@@ -60,7 +61,7 @@ These were run against the real application, not stubs.
 | Check | Result |
 |---|---|
 | `GET /ready` | 200 `{"status": "ready"}` |
-| `GET /health` | 200, `ok`, `embeddings_available: true`, mode `sentence_transformers` |
+| `GET /health` | 200, `ok`, `embeddings_available: true`, mode `sentence_transformers` (the default path; the container reports `onnx`, see the hosted checks below) |
 | `GET /api/admin/metrics` without a token | 401 |
 | Response headers | `X-Request-ID`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy` present |
 | Production start, placeholder `SECRET_KEY` | **Refused** (`ConfigurationError`) |
@@ -70,7 +71,7 @@ These were run against the real application, not stubs.
 
 ## Docker image
 
-Built and run locally on Docker Desktop 29.7.2 (Apple Silicon, linux/arm64) on 2026-10-31.
+Built and run locally on Docker Desktop 29.7.2 (Apple Silicon, linux/arm64) on 2026-10-31, **before small-host mode**; that image used the sentence-transformers path.
 
 | Check | Result |
 |---|---|
@@ -89,6 +90,21 @@ Found by building it:
 - **Flaky PyPI downloads.** Two builds failed in `pip install` on transient download errors. `PIP_RETRIES` and `PIP_DEFAULT_TIMEOUT` are now set in the Dockerfile. The linux/amd64 image (Hugging Face's architecture) was also built under emulation and passed the same checks: `uname -m` x86_64, `/ready` 200 after 15 s, demo login, and the Space `frame-ancestors` policy on pages with the API still `'none'`.
 
 Container restarts were tested: with a mounted volume a registered user could still sign in afterwards; without one the data was gone. Not covered: real provider calls.
+
+## Hosted deployment checks (Render, 2026-11-25)
+
+Read-only checks against https://atlas-cite-check.onrender.com after the small-host fixes were deployed. No account was created by these checks.
+
+| Check | Result |
+|---|---|
+| `GET /ready` | 200 `{"status":"ready"}` |
+| `GET /health` | 200, `embeddings_available: true`, `embeddings_mode: onnx` |
+| `GET /docs` | 404 (API docs are off in production) |
+| `GET /api/auth/me` without a token | 401 |
+| Landing page, sign-in page, workspace page | 200, no browser console errors, security headers present (CSP, HSTS, `nosniff`, `no-referrer`) |
+| Cold start after idle | First request about 35 to 70 s |
+
+Defects found on the hosted instance, with causes and fixes, are listed in [Development history, phase 6](05-development-history.md#phase-6-first-live-deployment-2026-11-23-to-2026-11-25) and in the [QA report](project/05-qa-report.md).
 
 ## What the first full run found
 
@@ -115,7 +131,8 @@ A separate defect was also found in my own CI workflow: a plain `pytest` also co
 | **Model quality** | No benchmark was run against real models, so there are no rankings or accuracy numbers |
 | **Python 3.11 and 3.12** | The README supports 3.11 and newer; only 3.13 was used |
 | **Load, concurrency at scale and long-running behaviour** | Only the atomic-reservation test exercises concurrency |
-| **A deployed instance on Hugging Face Spaces** | The Docker image was built and run locally (see "Docker image" below), but it has not been deployed to a Space, so the platform proxy, secrets and ephemeral disk are untested. |
+| **A Hugging Face Space** | The image was built and run locally on both architectures, but the live demo is on Render. A Docker Space needs a paid plan, so the Space path is untested. |
+| **Research, sign-up and sign-in on the hosted instance after the 2026-11-25 fixes** | They were verified locally with the same settings. The hosted run depends on the free instance's CPU and memory and has to be confirmed on the live site. |
 | **Frozen retrieval cases** | The fixture is missing, so those three tests are skipped |
 | **The fourth skipped test** | `test_chroma_telemetry.py` needs `posthog`, which the installed chromadb does not depend on |
 
@@ -137,8 +154,8 @@ Upgrading the major-version ones is the first item for a follow-up release.
 |---|---|
 | Static analysis (ruff F/B/S rules) on production code | 12 unused imports removed; the 15 dynamic-SQL sites build only from hard-coded column and table names with bound values (no injection path); 93 `Depends()` and 11 `raise ... from` notes are style only |
 | Dead code | `backend/services/verification_service.py` (145 lines, imported nowhere, superseded by `VerificationAgent`) removed |
-| All-routes smoke test | All 99 routes with empty, malformed and hostile inputs plus no token: **0 server errors**; every protected route refuses anonymous calls; admin routes return 403 to normal users; a tampered token is rejected; an oversized body gets 413 |
-| Frontend to backend contract | All 50 API call sites in `frontend/js` match a real route and method |
+| All-routes smoke test (run when the API had 99 routes; it has 89 since Workflow Studio was removed) | All routes with empty, malformed and hostile inputs plus no token: **0 server errors**; every protected route refuses anonymous calls; admin routes return 403 to normal users; a tampered token is rejected; an oversized body gets 413 |
+| Frontend to backend contract (before Workflow Studio was removed) | All 50 API call sites in `frontend/js` matched a real route and method |
 | Secret scan | Working tree and full Git history: only obvious test fixtures (`gsk_1234...`). No real key was ever committed. |
 | Dependency audit (`pip-audit`) | 9 packages with advisories. `lxml` raised to 6.1+. The rest need major-version upgrades (LangGraph, LangChain, Transformers, sentence-transformers) or have no fix yet (chromadb); see the table below. |
 | Fresh-clone start | `python start.py` (with `PORT` set) reached `/ready` in about 6 s; landing page, workspace and `/docs` return 200 |

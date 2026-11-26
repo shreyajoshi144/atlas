@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Atlas — Research you can trace. AI you can measure.</title>
-<meta name="description" content="Atlas is a workspace for evidence-backed research and for testing the AI behind it: trace every claim to its source, compare and benchmark models, build workflows and control model execution." />
+<meta name="description" content="Atlas is a workspace for evidence-backed research and for testing the AI behind it: trace every claim to its source, compare and benchmark models, and route requests to the cheapest model that meets a quality bar." />
 <meta name="theme-color" content="#FBF7F0" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%237A6270' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='28'/%3E%3Cpath d='M32 8 C40 20 40 30 32 34 C24 30 24 20 32 8Z' fill='%23C8999C'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
   <div class="wrap hero-copy">
     <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Evidence-backed research &middot; Model evaluation &middot; Cost control</p>
     <h1 id="heroTitle"><span>Research you can trace.</span><span class="grad">AI you can measure.</span></h1>
-    <p class="hero-lede">Atlas is a workspace for evidence-backed research, and for putting the AI behind it to the test. Follow every claim to its source, compare and benchmark models, build repeatable workflows, and decide which model runs and what it costs.</p>
+    <p class="hero-lede">Atlas is a workspace for evidence-backed research, and for putting the AI behind it to the test. Follow every claim to its source, compare and benchmark models, and route requests to the cheapest model that meets your quality bar.</p>
     <div class="hero-cta"><a class="btn btn-lg" href="auth.html?mode=signup">Create your account</a><a class="btn btn-ghost btn-lg" href="auth.html?mode=signin">Sign in</a></div>
     <ul class="proof" aria-label="Highlights">
       <li>Every claim linked to its source</li>
@@ -37,7 +37,7 @@
     <aside class="dash-side">
       <div class="side-brand"><span class="side-mark"></span>Atlas</div>
       <ul>
-        <li class="on">Overview</li><li>Research</li><li>AI Playground</li><li>Compare</li><li>AtlasBench</li><li>Workflow Studio</li><li>Runtime &amp; Control</li>
+        <li class="on">Overview</li><li>Research</li><li>AI Playground</li><li>Compare</li><li>AtlasBench</li>
       </ul>
       <div class="side-foot"><span class="avatar">S</span><span>Sample user</span></div>
     </aside>
@@ -110,7 +110,7 @@
 </div></section>
 
 <section class="sec" id="features" aria-labelledby="featH"><div class="wrap">
-  <div class="sec-head"><div class="kick">Features</div><h2 id="featH">Four jobs, one account.</h2><p>Research with evidence you can inspect, evaluate the AI systems you rely on, build workflows that run the same way every time, and control which models execute.</p></div>
+  <div class="sec-head"><div class="kick">Features</div><h2 id="featH">Three jobs, one account.</h2><p>Research with evidence you can inspect, evaluate the AI systems you rely on, and route requests to the model that earns the work.</p></div>
 
   <article class="job" id="research"><div class="job-copy">
     <svg class="job-glyph" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="20" cy="20" r="11"/><path d="M28 28 L40 40"/><path d="M20 14 C24 18 24 21 20 24 C16 21 16 18 20 14Z" fill="currentColor" fill-opacity=".22"/></svg>
@@ -133,20 +133,12 @@
       <div style="margin-top:18px"><div class="score"><span>Claim correctness</span><div class="tr"><i style="width:82%"></i></div><div class="tr b"><i style="width:68%"></i></div></div><div class="score"><span>Citation accuracy</span><div class="tr"><i style="width:74%"></i></div><div class="tr b"><i style="width:79%"></i></div></div><div class="score"><span>Evidence grounding</span><div class="tr"><i style="width:61%"></i></div><div class="tr b"><i style="width:70%"></i></div></div></div>
       <figcaption class="sheet-cap">Schematic. Bars fill with measured scores after a real run.</figcaption></figure></article>
 
-  <article class="job" id="workflow"><div class="job-copy">
-    <svg class="job-glyph" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="24" r="4"/><circle cx="24" cy="12" r="4"/><circle cx="24" cy="36" r="4"/><circle cx="39" cy="24" r="4"/><path d="M13 22 L20 14 M13 26 L20 34 M28 14 L35 22 M28 34 L35 26"/></svg>
-    <h3>Build workflows</h3>
-    <p>Save a bounded workflow from a template, run it on any text, and read what every step did.</p>
-    <ul><li>Only steps the server can execute deterministically are accepted</li><li>Runs carry an idempotency key, so a retry does not repeat work</li><li>Full run history with step-by-step outcomes</li></ul>
-    <a class="btn btn-ghost" href="auth.html?mode=signup&amp;next=%23%2FworkflowStudio">Open Workflow Studio</a></div>
-    <figure class="sheet" style="margin:0"><h4>The five step types</h4><div class="muted small" style="margin-bottom:16px">Every run reports each step’s outcome.</div><div class="chain"><span>input text</span><span class="ar">→</span><span>normalize whitespace</span><span class="ar">→</span><span>append text</span><span class="ar">→</span><span>uppercase</span><span class="ar">→</span><span>require phrase</span></div><figcaption class="sheet-cap">Schematic of the step types the API accepts.</figcaption></figure></article>
-
-  <article class="job flip" id="runtime"><div class="job-copy">
+  <article class="job" id="routing"><div class="job-copy">
     <svg class="job-glyph" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="24" cy="26" r="15"/><path d="M24 26 L33 16"/><path d="M12 12 L15 15 M36 12 L33 15 M24 6 V10"/></svg>
-    <h3>Control model execution</h3>
-    <p>Decide how models are chosen, preview the decision, and audit what actually ran, what it cost and when a fallback fired.</p>
+    <h3>Route by measured quality</h3>
+    <p>Inside AtlasBench, set a routing policy, preview the decision without calling a model, and audit what actually ran, what it cost and when a fallback fired.</p>
     <ul><li>Explicit or autopilot model selection, saved as your policy</li><li>Preview a routing decision without calling a model</li><li>Every call shown as requested model → actual model</li></ul>
-    <a class="btn btn-ghost" href="auth.html?mode=signup&amp;next=%23%2Fruntime">Open Runtime &amp; Control</a></div>
+    <a class="btn btn-ghost" href="auth.html?mode=signup&amp;next=%23%2Fatlasbench">Open AtlasBench</a></div>
     <figure class="sheet" style="margin:0"><div class="flow"><div class="node"><span>Request</span><small>from any area</small></div><div class="node pol"><span>Routing policy</span><small>saved per account</small></div><div class="node"><span>Model call</span><small>requested → actual</small></div><div class="node fb"><span>Fallback</span><small>only if turned on</small></div><div class="node"><span>Usage ledger</span><small>calls · tokens · est. cost</small></div></div><figcaption class="sheet-cap">Schematic. A decision can be previewed without calling a model.</figcaption></figure></article>
 
   <div class="also"><h3>Also in the workspace</h3><ul>
@@ -174,7 +166,7 @@
     <li><b>Sessions</b><span>Signed access tokens that expire; seven days by default, set by whoever runs the deployment.</span></li>
     <li><b>Abuse limits</b><span>Sign-in, sign-up and password-reset requests are rate-limited per client address.</span></li>
     <li><b>Password reset</b><span>Single-use reset tokens that expire. The request never reveals whether an email has an account.</span></li>
-    <li><b>Your data</b><span>Cases, conversations, workflows, benchmark runs and routing policies belong to your account and are not listed for other accounts.</span></li>
+    <li><b>Your data</b><span>Cases, conversations, benchmark runs and routing policies belong to your account and are not listed for other accounts.</span></li>
     <li><b>No silent swaps</b><span>When a fallback is enabled, every call is shown as the model you asked for and the model that answered.</span></li></ul>
   <p class="honest"><b>What this page does not claim.</b> No compliance certification, no uptime guarantee and no data-residency promise is made here. Those depend on who runs your deployment; ask them.</p>
 </div></section>
@@ -182,10 +174,10 @@
 <section class="sec band" id="engineering" aria-labelledby="engH"><div class="wrap">
   <div class="sec-head"><div class="kick">Engineering</div><h2 id="engH">Built to be checked, like the research it produces.</h2><p>Atlas is an open codebase, not a mockup. These figures are counted from the repository, and the limits are stated next to them.</p></div>
   <ul class="eng-stats" aria-label="Codebase at a glance">
-    <li><b>24k</b><span>lines of application Python across 18 API route modules</span></li>
-    <li><b>884</b><span>test functions in 56 backend test files, plus 7 UI test files</span></li>
+    <li><b>24k</b><span>lines of application Python across 17 API route modules</span></li>
+    <li><b>891</b><span>test functions in 56 backend test files, plus 8 frontend test files</span></li>
     <li><b>6</b><span>deterministic benchmark measures. No LLM judge anywhere in scoring</span></li>
-    <li><b>4</b><span>live model providers behind one normalised, retry-aware client</span></li>
+    <li><b>4</b><span>model providers behind one normalised, retry-aware client</span></li>
   </ul>
   <ul class="trust">
     <li><b>Evidence before opinion</b><span>Models are ranked only on frozen tasks over fictional evidence, so no one can answer from memory. Two models are separated only when their 95% intervals do not overlap.</span></li>
@@ -203,9 +195,9 @@
     <details class="lp-faq"><summary>What is Atlas for?</summary><p>Atlas is a workspace for AI work you need to be able to check: research with sources and verified claims, side-by-side model comparison, repeatable benchmarks, simple automations and control over which models run.</p></details>
     <details class="lp-faq"><summary>Does a verification score mean a claim is true?</summary><p>No. It measures how consistently the evidence supports a claim and how confident the check is. Partial or weak support is labelled as such, with the sources beside it so you can judge.</p></details>
     <details class="lp-faq"><summary>Do I need my own API keys?</summary><p>Atlas uses the search and model providers configured by whoever runs the deployment. If you are signing in to someone else’s deployment, you do not bring keys.</p></details>
-    <details class="lp-faq"><summary>Where is my work stored?</summary><p>In the database of the deployment you sign in to, attached to your account. You can delete cases, conversations and workflows from inside the app.</p></details>
+    <details class="lp-faq"><summary>Where is my work stored?</summary><p>In the database of the deployment you sign in to, attached to your account. You can delete cases and conversations from inside the app.</p></details>
     <details class="lp-faq"><summary>Can I reset a forgotten password?</summary><p>You can request a reset. Delivery depends on the person running the deployment having configured email; if no email arrives, ask them to reset it for you.</p></details>
-    <details class="lp-faq"><summary>Where is Runtime &amp; Control?</summary><p>It is its own area in the workspace. Policies, routing previews and the usage ledger live there, and it shares its backend with AtlasBench.</p></details>
+    <details class="lp-faq"><summary>Where do I set the routing policy?</summary><p>In AtlasBench, on the Routing &amp; cost tab. Policies, routing previews and the usage ledger live there.</p></details>
     <details class="lp-faq"><summary>Is there an API or a mobile app?</summary><p>Atlas is a web app. The backend exposes an HTTP API used by this interface; no separate mobile app or public API programme is offered on this site.</p></details>
   </div>
 </div></section>
@@ -219,10 +211,10 @@
 </main>
 
 <footer class="sf"><div class="sf-grid">
-<div><a class="sh-brand" href="index.html"><span class="sh-mark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M32 10 C41 21 41 31 32 36 C23 31 23 21 32 10Z" fill="currentColor" fill-opacity=".25"/><path d="M32 36 V54 M32 46 C26 44 22 40 21 36 M32 44 C38 42 42 38 43 34"/></svg></span>Atlas</a><p>Research you can trace, AI you can measure. Source-linked research, model comparison, benchmarks, workflows and routing control.</p></div>
-<div><h4>Product</h4><ul><li><a href="index.html#research">Research</a></li><li><a href="index.html#playground">AI Playground</a></li><li><a href="index.html#atlasbench">AtlasBench</a></li><li><a href="index.html#workflow">Workflow Studio</a></li><li><a href="index.html#runtime">Runtime &amp; Control</a></li></ul></div>
+<div><a class="sh-brand" href="index.html"><span class="sh-mark"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M32 10 C41 21 41 31 32 36 C23 31 23 21 32 10Z" fill="currentColor" fill-opacity=".25"/><path d="M32 36 V54 M32 46 C26 44 22 40 21 36 M32 44 C38 42 42 38 43 34"/></svg></span>Atlas</a><p>Research you can trace, AI you can measure. Source-linked research, model comparison, benchmarks and cost-aware routing.</p></div>
+<div><h4>Product</h4><ul><li><a href="index.html#research">Research</a></li><li><a href="index.html#playground">AI Playground</a></li><li><a href="index.html#atlasbench">AtlasBench</a></li><li><a href="index.html#routing">Routing</a></li></ul></div>
 <div><h4>Learn</h4><ul><li><a href="index.html#how">How it works</a></li><li><a href="index.html#features">Features</a></li><li><a href="index.html#use-cases">Use cases</a></li><li><a href="index.html#faq">FAQ</a></li></ul></div>
 <div><h4>Account</h4><ul><li><a href="auth.html?mode=signin">Sign in</a></li><li><a href="auth.html?mode=signup">Create account</a></li><li><a href="auth.html?mode=signin#forgot">Forgot password</a></li></ul></div>
 <div><h4>More</h4><ul><li><a href="terms.html">Terms</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="index.html#security">Security</a></li><li><a href="contact.html">Contact</a></li></ul></div>
-</div><div class="sf-base"><span>© Atlas. Research, evaluation, workflows and control in one place.</span><a href="#top">Back to top</a></div></footer>
+</div><div class="sf-base"><span>© Atlas. Research, evaluation and model routing in one place.</span><a href="#top">Back to top</a></div></footer>
 <script src="js/landing.js"></script></body></html>

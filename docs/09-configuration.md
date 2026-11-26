@@ -57,11 +57,14 @@ Limits are enforced by an atomic reservation before each call and return `429`. 
 
 ## Retrieval and embeddings
 
-Embeddings run locally with a sentence-transformers model, so `OPENAI_API_KEY` is optional (it only enables OpenAI in Compare).
+Embeddings run locally (sentence-transformers by default, or the ONNX build of the same model in the Docker image), so `OPENAI_API_KEY` is optional (it only enables OpenAI in Compare).
 
 | Variable | Default |
 |---|---|
 | `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` |
+| `ATLAS_EMBEDDING_BACKEND` | unset (sentence-transformers). `onnx` uses Chroma's ONNX build of the same model with no PyTorch. The Docker image sets `onnx`. |
+| `ATLAS_DENSE_RANKING` | `1`. `0` turns off embedding-based source ranking. The Docker image sets `0`. |
+| `ATLAS_MAX_TOP_K` | unset (no cap). Caps sources per research run. The Docker image sets `6`. |
 | `RETRIEVAL_RRF_K` | `60` |
 | `RETRIEVAL_LEXICAL_WEIGHT` / `RETRIEVAL_DENSE_WEIGHT` | `1.0` / `1.0` |
 | `RETRIEVAL_CANDIDATE_DEPTH` | `50` |
@@ -98,7 +101,14 @@ A provider is enabled when its key is set to a real value (placeholders such as 
 | `SENTRY_DSN` | unset | Optional error tracking. PII and request bodies are not sent. |
 | `ATLASBENCH_MIN_ARBITRATION_QUALITY` | `0.0` | Minimum quality score a run needs before AtlasBench arbitration will compare it (0 to 1). |
 
-## Demo account (Space start script only)
+## Small-host mode and API docs
+
+| Variable | Default | Notes |
+|---|---|---|
+| `ATLAS_LIGHT_MODE` | unset | `1` skips the executive brief and vector indexing on research runs. Reports are still saved. The Docker image sets `1`; see [Small-host mode](07-deployment.md#small-host-mode-512-mb). |
+| `ENABLE_API_DOCS` | `false` in production | `true` serves `/docs`, `/redoc` and `/openapi.json` in production. They are always on in development. |
+
+## Demo account (container start script)
 
 | Variable | Notes |
 |---|---|

@@ -21,6 +21,8 @@ timeline
     2026-10-21 : Multi-provider Compare with grounding suite
     2026-10-28 : Platform v2 and frontend redesign
     2026-10-30 : Production polish, CI, security fixes, docs
+    2026-11-23 : Polish published (PR #1) and deployed to Render
+    2026-11-25 : Hosted-deployment fixes, scope reduced to five areas
 ```
 
 ## Phase 1: Living Research Workspace (2026-07-02)
@@ -53,7 +55,7 @@ First complete version (commit "complete Atlas Living Research Workspace"): a re
 ## Phase 4: Compare, v2 and redesign
 
 - **Multi-provider Compare (2026-10-21).** Real adapters for OpenAI, xAI, Anthropic and Gemini with a normalised response type, per-attempt timeouts, jittered retries honouring `Retry-After`, an 18-category error taxonomy, a per-provider circuit breaker, concurrency limits, a model and price catalog with verification dates, and a 24-case grounding suite with confidence intervals.
-- **Platform v2 (2026-10-28).** One commit brought multi-provider Compare, AtlasBench, routing and auth into the repository. The same codebase includes Workflow Studio, per-user budgets, admin audit logging and the single-container Hugging Face deployment.
+- **Platform v2 (2026-10-28).** One commit brought multi-provider Compare, AtlasBench, routing and auth into the repository. The same codebase included per-user budgets, admin audit logging, a single-container deployment and a Workflow Studio feature (the last was removed in 2.1.1, see Phase 6).
 - **Frontend redesign.** A from-scratch static frontend: separate public site, auth page and workspace, one design-token file, no framework.
 
 ## Phase 5: Production polish (2026-10-30)
@@ -66,6 +68,20 @@ First complete version (commit "complete Atlas Living Research Workspace"): a re
 | Build | `pytest` moved out of runtime requirements into `requirements-dev.txt`. Added `.dockerignore` and a container `HEALTHCHECK` on `/ready`. |
 | Deployment | Proxy trust is configurable through `FORWARDED_ALLOW_IPS` |
 | Docs | Sixteen batch and sprint reports replaced by this set. See the [changelog](CHANGELOG.md). |
+
+This work was committed locally and published on 2026-11-23 as pull request #1 (release 2.1.0).
+
+## Phase 6: First live deployment (2026-11-23 to 2026-11-25)
+
+The first public deployment, on Render's free tier, exposed problems that local tests could not.
+
+| Finding | Cause | Fix |
+|---|---|---|
+| The Docker build failed with `mkdir: Permission denied` | The deployed branch still had the older Dockerfile, where `WORKDIR` ran before `USER` | Fixed in 2.1.0; redeployed |
+| CI failed: 46 provider tests errored in setup | The provider test step had no `GROQ_API_KEY` or `TAVILY_API_KEY`; the pytest step got them from `conftest.py` | The workflow step now sets test values |
+| Research failed; sign-out returned 502; accounts "disappeared" | One research run needed about 870 MB, the instance has 512 MB, so the app was killed and restarted. The free disk is wiped at every restart, so accounts went with it. | Small-host mode (see the [deployment guide](07-deployment.md#small-host-mode-512-mb)): ONNX embeddings, keyword ranking, at most 6 sources, no vector indexing |
+| API documentation was public | Swagger UI was always on | Off in production unless `ENABLE_API_DOCS=true` |
+| Menu items that cannot be demonstrated or explained | Compare needs provider keys the demo does not have; Workflow Studio and Runtime & Control were hard to explain and not needed to tell the story | Scope reduced to five areas: Workflow Studio removed, Runtime & Control folded into AtlasBench. See the [decision log](project/07-decision-log.md). |
 
 ## What the earlier reports taught
 

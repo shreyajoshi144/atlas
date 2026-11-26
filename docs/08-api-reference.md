@@ -1,6 +1,6 @@
 # API reference
 
-Atlas serves a JSON API under `/api`, plus two health probes. This page lists every route (99 in total). It was generated from the application's OpenAPI schema; the live, interactive version is at `/docs` (Swagger UI) and `/openapi.json` on any running instance.
+Atlas serves a JSON API under `/api`, plus two health probes. This page lists every route (89 in total). It was generated from the application's OpenAPI schema; the live, interactive version (Swagger UI at `/docs`, schema at `/openapi.json`) is on by default in development and **off in production** unless `ENABLE_API_DOCS=true` is set.
 
 ## Conventions
 
@@ -187,23 +187,6 @@ Single-claim verification challenges.
 | GET | `/api/challenges/{challenge_id}` | Get Challenge | User |  |
 | POST | `/api/challenges/{challenge_id}/execute` | Execute Challenge | User | 10 / 5 min / user |
 | GET | `/api/challenges/{challenge_id}/inspect` | Inspect Challenge | User |  |
-
-### workflows
-
-Workflow Studio.
-
-| Method | Path | Summary | Access | Rate limit |
-|---|---|---|---|---|
-| GET | `/api/workflows` | List Workflows | User |  |
-| POST | `/api/workflows` | Create Workflow | User |  |
-| GET | `/api/workflows/runs/{run_id}` | Get Workflow Run | User |  |
-| GET | `/api/workflows/templates` | Templates | User |  |
-| GET | `/api/workflows/{workflow_id}` | Get Workflow | User |  |
-| PUT | `/api/workflows/{workflow_id}` | Update Workflow | User |  |
-| DELETE | `/api/workflows/{workflow_id}` | Delete Workflow | User |  |
-| POST | `/api/workflows/{workflow_id}/duplicate` | Duplicate Workflow | User |  |
-| POST | `/api/workflows/{workflow_id}/execute` | Execute Workflow | User |  |
-| GET | `/api/workflows/{workflow_id}/runs` | Workflow History | User |  |
 
 ### routing
 

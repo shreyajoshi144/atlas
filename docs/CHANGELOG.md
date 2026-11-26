@@ -1,11 +1,35 @@
 # Changelog
 
-All notable changes to Atlas. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are commit dates. Earlier work was published as a few large commits, so the entries before 2026-10-30 group several milestones. See [development history](05-development-history.md) for detail.
+All notable changes to Atlas. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Release dates are the dates of the merging commits in Git. Earlier work was published as a few large commits, so the earlier entries group several milestones. See [development history](05-development-history.md) for detail.
 
-## [Unreleased]
+## [2.1.1] - 2026-11-25
+
+Fixes found by running the live deployment on Render's free tier (512 MB memory, a fraction of a CPU).
 
 ### Added
-- Documentation: docs index, [deployment guide](07-deployment.md), [API reference](08-api-reference.md) (all 99 routes, generated from the OpenAPI schema) and [configuration reference](09-configuration.md).
+- Small-host mode, set by the Dockerfile: `ATLAS_EMBEDDING_BACKEND=onnx` (ONNX build of the same embedding model, no PyTorch), `ATLAS_DENSE_RANKING=0` (keyword and credibility ranking only), `ATLAS_MAX_TOP_K=6` (at most 6 sources per run) and `ATLAS_LIGHT_MODE=1` (no executive brief, no vector indexing; the report is still saved). Details in the [deployment guide](07-deployment.md#small-host-mode-512-mb).
+- `ENABLE_API_DOCS` setting. The Swagger UI, ReDoc and `/openapi.json` are now off in production unless it is `true`. Tests in `backend/tests/test_api_docs_toggle.py`.
+- "How it works" panels on AtlasBench and the AI Playground.
+- Render deployment instructions, and runbook entries for hosted restarts.
+
+### Changed
+- AtlasBench is the single home for model scoring and routing: **Runtime & Control** is no longer a separate area; its content is the **Routing & cost** tab of AtlasBench.
+- The workspace menu is Overview, Research, AI Playground, Compare and AtlasBench. The landing page, the Overview "Where to begin" list, the README and the docs describe the same five areas.
+- Browser pages that are restored from the back/forward cache reload, so a signed-out user's page is not shown again.
+
+### Fixed
+- Research failed on the 512 MB host: one run peaked at about 870 MB locally, and the hosted app was restarted mid-run. A run now peaks at about 210 MB locally (measured before light mode was added).
+- CI: the provider test step had no `GROQ_API_KEY` or `TAVILY_API_KEY` in its environment, so 46 tests errored in setup. The step now sets test values.
+
+### Removed
+- **Workflow Studio**: the `/api/workflows` routes (10 operations), the `backend/workflows` module, its three database tables in a fresh schema, its page, styles, tests and every mention in the landing page and docs. The API now has 89 operations.
+
+## [2.1.0] - 2026-11-23
+
+Production polish, merged as pull request #1.
+
+### Added
+- Documentation: docs index, [deployment guide](07-deployment.md), [API reference](08-api-reference.md) (generated from the OpenAPI schema) and [configuration reference](09-configuration.md).
 - `FRAME_ANCESTORS` setting (default `'none'`). `deploy/start_space.sh` sets it to the Hugging Face origins so the Space page can embed the app; API responses stay non-embeddable. Validated at startup.
 - `deploy/space/README.md`: Hugging Face Space front matter (`sdk: docker`, `app_port: 7860`).
 - GitHub Actions CI: compile check, Python suite, provider suite, Node syntax checks and UI tests.
@@ -56,7 +80,7 @@ All notable changes to Atlas. Format follows [Keep a Changelog](https://keepacha
 - Multi-provider Compare: OpenAI, Anthropic, Gemini and xAI, with a price catalog and a 24-case grounding suite.
 - AtlasBench: frozen tasks, deterministic scoring, reproducible runs, output arbitration.
 - Routing and Cost Autopilot with bounded fallback.
-- Workflow Studio, per-user budgets, admin endpoints with an audit log.
+- Workflow Studio (removed in 2.1.1), per-user budgets, admin endpoints with an audit log.
 - Argon2id password hashing with migration of legacy PBKDF2 hashes.
 - Single-container deployment for Hugging Face Spaces.
 - Redesigned static frontend: public site, auth page, workspace.

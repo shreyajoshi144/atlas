@@ -18,7 +18,6 @@ from backend.api.routes.knowledge_base import router as knowledge_base_router
 from backend.api.routes.knowledge_map import router as knowledge_map_router
 from backend.api.routes.challenges import router as challenges_router
 from backend.api.routes.atlasbench import router as atlasbench_router
-from backend.api.routes.workflows import router as workflows_router
 from backend.api.routes.routing import router as routing_router
 from backend.api.routes.notes import router as notes_router
 from backend.api.routes.questions import router as questions_router
@@ -205,7 +204,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # POST   /api/auth/login                            → auth (open)
 # GET    /api/auth/me                                → auth (protected)
 # /api/atlasbench/*                                 → AtlasBench (protected, user-scoped)
-# /api/workflows/*                                  → Workflow Studio (protected, user-scoped)
 # /api/routing/*                                    → Cost Autopilot + model routing (protected, user-scoped)
 # /api/compare/*                                    → Multi-provider comparison: OpenAI/Anthropic/Gemini/xAI (protected, user-scoped; /admin/* needs role=admin)
 # POST   /api/research/run                          → research (protected)
@@ -235,7 +233,6 @@ app.include_router(knowledge_base_router, prefix="/api",               tags=["kn
 app.include_router(knowledge_map_router,  prefix="/api/knowledge-map", tags=["knowledge-map"],  dependencies=_auth_dep)
 app.include_router(challenges_router,     prefix="/api/challenges",     tags=["challenges"],     dependencies=_auth_dep)
 app.include_router(atlasbench_router,     prefix="/api/atlasbench",     tags=["atlasbench"],     dependencies=_auth_dep)
-app.include_router(workflows_router,       prefix="/api/workflows",      tags=["workflows"],      dependencies=_auth_dep)
 app.include_router(routing_router,        prefix="/api/routing",        tags=["routing"],        dependencies=_auth_dep)
 app.include_router(notes_router,          prefix="/api/notes",         tags=["notes"],          dependencies=_auth_dep)
 app.include_router(questions_router,      prefix="/api/questions",     tags=["questions"],      dependencies=_auth_dep)

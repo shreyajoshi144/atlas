@@ -20,8 +20,7 @@ flowchart LR
         KNOW["Knowledge · Retrieval · Challenges"]
         EVAL["Compare · Playground · AtlasBench"]
         ROUTE["Routing · Budgets · Ops"]
-        WF["Workflow Studio"]
-        MW --> AUTH --> RES & KNOW & EVAL & ROUTE & WF
+        MW --> AUTH --> RES & KNOW & EVAL & ROUTE
     end
 
     subgraph Storage
@@ -39,7 +38,7 @@ flowchart LR
         WEB[Public web pages]
     end
 
-    EMB["sentence-transformers<br/>all-MiniLM-L6-v2, local"]
+    EMB["all-MiniLM-L6-v2, local<br/>ONNX in the container"]
 
     UI <-->|"JSON + bearer token"| MW
     RES --> ROUTE --> GROQ
@@ -88,7 +87,7 @@ flowchart LR
     PL[Planner] --> VAL{Plan valid?}
     VAL -->|no| FB[Fixed pipeline fallback]
     VAL -->|yes| EX[Execute steps]
-    EX --> T["Closed tool registry<br/>search_web · scrape_source<br/>verify_claim · request_more_evidence"]
+    EX --> T["Closed tool registry<br/>search_web · scrape_source · search_existing_evidence<br/>verify_claim · request_more_evidence"]
     T --> CHK{Verification passed?}
     CHK -->|yes| DONE[Hand off to writer]
     CHK -->|no, replans left| RP[Re-plan<br/>max 3]
@@ -164,7 +163,6 @@ erDiagram
     users ||--o{ notes : writes
     users ||--o{ routing_policies : defines
     users ||--o{ bench_runs : runs
-    users ||--o{ workflow_definitions : creates
     users ||--o{ llm_usage : generates
     users ||--|| user_usage_limits : "capped by"
 
@@ -185,11 +183,9 @@ erDiagram
     bench_runs ||--o{ bench_run_cases : contains
     bench_runs ||--o{ bench_arbitrations : "compared in"
 
-    workflow_definitions ||--o{ workflow_runs : executes
-    workflow_runs ||--o{ workflow_run_steps : records
 ```
 
-Every user-facing table carries a `user_id`, and every repository query filters on it. Tests assert isolation between two users for research, notes, Playground, workflows and benchmark runs.
+Every user-facing table carries a `user_id`, and every repository query filters on it. Tests assert isolation between two users for research, notes, Playground, benchmark runs and routing policies.
 
 ## 7. Security and request lifecycle
 
@@ -236,9 +232,9 @@ sequenceDiagram
 flowchart LR
     DEV[Developer] -->|git push| GH[GitHub]
     GH -->|Actions| CI["CI<br/>compile · pytest · unit tests<br/>node checks"]
-    GH -->|Docker Space| HF
+    GH -->|auto-deploy on push| HF
 
-    subgraph HF["Container · port 7860"]
+    subgraph HF["Container · port 7860 (Render, or a Hugging Face Docker Space)"]
         SEED[seed_demo.py] --> UV["uvicorn<br/>deploy.space_app"]
         UV --> API2["/api/* , /health , /ready"]
         UV --> STATIC["Static frontend at /"]
@@ -249,7 +245,7 @@ flowchart LR
     HF --> PROV[Provider APIs]
 ```
 
-One process serves both the API and the UI, so there is a single origin and no CORS in the deployed path. The image uses CPU-only PyTorch, runs as a non-root user, bakes the embedding model in at build time so startup never needs the network, and has a `HEALTHCHECK` on `/ready`.
+One process serves both the API and the UI, so there is a single origin and no CORS in the deployed path. The image runs as a non-root user, bakes the ONNX embedding model in at build time so startup never needs the network, and has a `HEALTHCHECK` on `/ready`. It sets four environment variables for 512 MB hosts: `ATLAS_EMBEDDING_BACKEND=onnx`, `ATLAS_DENSE_RANKING=0`, `ATLAS_MAX_TOP_K=6` and `ATLAS_LIGHT_MODE=1` (see [configuration](09-configuration.md)).
 
 ## 9. Design decisions and trade-offs
 
@@ -261,4 +257,5 @@ One process serves both the API and the UI, so there is a single origin and no C
 | Router behind `get_chat_llm` | Agents and the graph don't change when routing does | Context has to be carried explicitly into thread-pool calls |
 | Hand-rolled signed tokens | No extra dependency, simple to audit | No revocation list. A standard JWT library would be the next step. |
 | In-memory rate limiter | No Redis dependency | Per process, resets on restart |
+| Small-host mode (ONNX embeddings, keyword ranking, at most 6 sources, no vector indexing) | The live demo runs on a free 512 MB instance; the full path peaked at about 870 MB | Lower semantic ranking quality on the demo, and Ask Atlas and Discover do not see new reports there. The full path stays the default everywhere else. |
 | Static frontend without a framework | No build step, one container | Large hand-written `script.js` (about 2,100 lines) that would benefit from modules |

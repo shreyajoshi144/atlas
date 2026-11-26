@@ -23,7 +23,7 @@ Prioritised with MoSCoW (Must, Should, Could, Won't now). Delivered work is reco
 | B-09 | Postgres, a hosted vector store and a shared rate limiter | Needed before more than one instance | Could | L | Not started | R-06 |
 | B-11 | Restore the frozen retrieval fixture (`backend/tests/data/m5_retrieval_cases.json`) | Three tests are skipped and the real-embedding quality benchmark is not running | Could | S | Not started | R-10 |
 | B-12 | Document upload | Lets users research their own files | Could | L | Not started | |
-| B-13 | Email delivery for password reset | Reset links are logged, not sent | Could | M | Not started | |
+| B-13 | Confirm a password-reset email arrives from the hosted site | The Brevo sender is tested against a fake only | Should | S | Open (needs the key on the host) | |
 | B-14 | Split `frontend/js/script.js` (about 2,100 lines) into modules | Maintainability | Could | M | Not started | |
 
 Size: S under a day, M a few days, L a week or more (estimates, not tracked effort).

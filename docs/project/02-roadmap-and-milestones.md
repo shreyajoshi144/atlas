@@ -46,10 +46,10 @@ No dates are promised; the order follows value and risk. IDs refer to the [backl
 
 | Horizon | Theme | Items |
 |---|---|---|
-| **Now** | Make the public demo trustworthy | B-01 confirm sign-up, sign-in and research on the hosted site; B-04 re-run the browser tests; B-03 let Compare run on the demo by adding Groq |
+| **Now** | Make the public demo trustworthy | B-01 confirm sign-up, sign-in and research on the hosted site; B-04 re-run the browser tests; B-03 set the Gemini key on the host so the AI Playground offers all four models |
 | **Next** | Turn "built" into "measured" | B-02 run a live comparison on at least two providers and publish pass rates with intervals; B-10 interview analysts to test the personas |
 | **Later** | Production hardening | B-05 persistent storage, B-06 background research jobs, B-07 dependency upgrades, B-08 token revocation, B-09 Postgres and a hosted vector store |
-| **Maybe** | Reach | B-12 document upload, B-13 email for password reset |
+| **Maybe** | Reach | B-12 document upload |
 
 ## 4. Release criteria for the next release
 

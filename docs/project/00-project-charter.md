@@ -47,7 +47,7 @@ Supporting: accounts and authentication, admin controls and monitoring, a single
 |---|---|
 | Document upload | Needs malware scanning and storage design |
 | Horizontal scaling (Postgres, shared limiter, hosted vector store) | The product is single-instance by design |
-| Email delivery (password reset) | No email provider |
+| Email other than password reset | Not needed for the objectives |
 | Token revocation | Hand-rolled signed tokens; revocation is a later step |
 | Voice, mobile app, real-time collaboration | Not needed for the objectives |
 | Discover (search-by-meaning page) | Built, then removed after 2.1.1 (decision D-19): it did not work on the demo and overlapped Cases and Library |

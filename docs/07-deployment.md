@@ -130,7 +130,7 @@ Measured locally: research runs completed in about 40 to 65 s, and peak memory w
 - **One worker.** Rate limits and request metrics are held in process memory. The start script runs a single uvicorn worker; do not scale out or add workers without moving these to a shared store.
 - **Proxy headers.** `FORWARDED_ALLOW_IPS` defaults to `*` because the platform proxy address is not fixed. On a host with a known proxy, set it to that address so clients cannot spoof their IP past the rate limiter.
 - **Request time limit.** A hosted proxy can cut a request that runs for about 100 seconds or more. Small-host mode keeps a research run well inside that on a fast CPU, but the free Render CPU is slower, so a run can still approach it.
-- **No email provider.** Password reset cannot send mail, and in production the forgot-password response returns no token, so a reset link is never delivered. Plan for admin-assisted resets on a public deployment.
+- **Password-reset email is optional.** Set `BREVO_API_KEY` (an API key, `xkeysib-...`, not an SMTP key), `BREVO_SENDER_EMAIL` (a sender verified in Brevo), optionally `BREVO_SENDER_NAME`, and `FRONTEND_BASE_URL` (used to build the link). Atlas uses Brevo's HTTPS API because free hosts may block SMTP ports. Without these, no reset email is sent.
 - **Costs are bounded, not guaranteed.** The spend caps use catalog-price estimates and reservations. Treat them as strong guard rails, not as invoices.
 
 ## Update and roll back

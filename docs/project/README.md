@@ -30,7 +30,7 @@ These are the reference facts. If another document disagrees with this table, th
 | Model providers | 5 supported in code (Groq, OpenAI, Anthropic, Gemini, xAI). The demo offers 2 Groq and 2 Gemini free-tier models; those four were called for real in local checks. OpenAI, Anthropic and xAI were tested against fakes only |
 | AtlasBench | 8 frozen tasks, 6 deterministic measures, no LLM judge |
 | Grounding evaluation suite | 24 labelled cases |
-| Backend tests | **1,241 passed, 4 skipped**, 0 failed (2026-11-26) |
+| Backend tests | **1,245 passed, 4 skipped**, 0 failed (2026-11-26) |
 | Provider suite | **121** tests, OK (2026-11-25) |
 | Frontend unit tests | **7** files, all pass (2026-11-26) |
 | Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23; **not re-run** after the menu changes of 2026-11-25 and 2026-11-26 |

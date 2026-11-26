@@ -9,6 +9,7 @@ All notable changes to Atlas. Format follows [Keep a Changelog](https://keepacha
 - The workspace menu is Overview, Research, AI Playground and AtlasBench.
 
 ### Added
+- Optional password-reset email through Brevo (`BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`). Previously no reset link was ever delivered in production.
 - Groq as a provider (alongside OpenAI, Anthropic, Gemini and xAI), and the free-tier models `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`.
 - `ATLAS_VISIBLE_MODELS` to limit which catalog models the page offers. The Docker image offers two Groq and two Gemini models.
 

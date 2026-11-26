@@ -54,7 +54,7 @@ Delivered in releases 1.0.0 (2026-07-02), 2.0.0 (2026-10-28), 2.1.0 (2026-11-23)
 
 ## 6. Quality
 
-Backend 1,241 passed and 4 skipped; provider suite 121 OK; frontend unit tests 7 files pass; browser tests 42/42 and 113/113 on 2026-11-23 and not re-run since. Nineteen defect groups were logged; all are closed except DEF-14, which is fixed locally and awaits hosted confirmation (DEF-18 and DEF-19 were verified locally and also need a hosted check). Verdict: **conditional pass** ([QA report](05-qa-report.md)).
+Backend 1,245 passed and 4 skipped; provider suite 121 OK; frontend unit tests 7 files pass; browser tests 42/42 and 113/113 on 2026-11-23 and not re-run since. Nineteen defect groups were logged; all are closed except DEF-14, which is fixed locally and awaits hosted confirmation (DEF-18 and DEF-19 were verified locally and also need a hosted check). Verdict: **conditional pass** ([QA report](05-qa-report.md)).
 
 ## 7. Risks and issues at closure
 

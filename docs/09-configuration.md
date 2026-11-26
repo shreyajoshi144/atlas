@@ -35,6 +35,9 @@ Limits are enforced by an atomic reservation before each call and return `429`. 
 |---|---|---|
 | `FRAME_ANCESTORS` | `'none'` | Who may embed the frontend pages in an iframe (CSP `frame-ancestors`). Accepts `'none'`, `'self'`, or space-separated `https://` origins; anything else stops startup. API responses are never embeddable. `deploy/start_space.sh` sets `https://huggingface.co https://*.hf.space` so a Hugging Face Space page can show the app. |
 | `FRONTEND_BASE_URL` | `http://localhost:7860` | Used to build password-reset links. |
+| `BREVO_API_KEY` | unset | Brevo **API** key for password-reset email. Secret. |
+| `BREVO_SENDER_EMAIL` | unset | Sender address verified in Brevo. Email is sent only when this and the key are set. |
+| `BREVO_SENDER_NAME` | `Atlas` | Display name of the sender. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` | Login token lifetime (7 days). |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | `30` | |
 | `MAX_REQUEST_BODY_BYTES` | `2097152` | Larger bodies get `413`. |

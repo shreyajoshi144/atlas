@@ -8,7 +8,7 @@ The suites were last re-run on **2026-11-25**, after the final scope change (Wor
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest) | `python -m pytest -q` | **1,241 passed, 4 skipped, 0 failed** (about 2 minutes, 2026-11-26) |
+| Backend (pytest) | `python -m pytest -q` | **1,245 passed, 4 skipped, 0 failed** (about 2 minutes, 2026-11-26) |
 | Provider suite (stdlib `unittest`) | `python -m unittest discover -s backend/providers/tests -t .` | **121 tests, OK** (about 42 s) |
 | Browser end-to-end (Playwright, run as scripts) | `python frontend/tests/e2e/test_compare_e2e.py` and `test_frontend_e2e.py` | Last full run on 2026-11-23: Compare **42/42**, Frontend **113/113**. **Not re-run since the menu changes of 2026-11-25 and 2026-11-26**: Playwright was not installed in the environment used, and the scripts still describe the earlier menu. |
 | Frontend unit tests (Node) | `node backend/tests/js/*.test.js` | **7 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Routing 14, link safety 4, API base 6, session persistence 5) |

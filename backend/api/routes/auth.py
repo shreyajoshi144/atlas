@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from backend.auth.dependencies import get_current_user
 from backend.auth.rate_limit import rate_limit
@@ -17,6 +17,7 @@ from backend.auth.security import (
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
 from backend.database import ResearchRepository
+from backend.services.email_service import email_configured, reset_link, send_password_reset
 from backend.models.api_models import (
     ForgotPasswordRequest,
     LoginRequest,
@@ -128,7 +129,9 @@ _GENERIC_FORGOT_MESSAGE = "If an account exists for that email, a reset link is 
     response_model=ApiResponse[ForgotPasswordResponse],
     dependencies=[Depends(rate_limit("forgot_password", limit=5, window_seconds=300))],
 )
-async def forgot_password(payload: ForgotPasswordRequest) -> ApiResponse[ForgotPasswordResponse]:
+async def forgot_password(
+    payload: ForgotPasswordRequest, background: BackgroundTasks
+) -> ApiResponse[ForgotPasswordResponse]:
     """Always returns the same generic success response whether or not the
     email belongs to an account — the frontend already renders one message
     regardless (see script.js), and this is what makes that safe: an
@@ -145,15 +148,14 @@ async def forgot_password(payload: ForgotPasswordRequest) -> ApiResponse[ForgotP
             token_hash=hash_reset_token(raw_token),
             expires_minutes=settings.password_reset_expire_minutes,
         )
-        # No email provider is configured for this deployment (out of scope
-        # for this phase — see the security report). The raw token is never
-        # written to logs: log files are routinely shipped to aggregators
-        # or retained far longer than a single response, so that would be
-        # a worse leak surface than this. Instead, in development only, the
-        # token is returned directly in the response so local/manual
-        # testing works without an email provider. Staging/production get
-        # neither a logged token nor a returned one — this endpoint can't
-        # actually deliver a reset until real email delivery is wired up.
+        # The raw token is never logged. It leaves the server only in the email to the account's
+        # own address (Brevo), or, in development, in the response so it can be tested without email.
+        # Sending runs after the response, so response time does not reveal whether the account exists.
+        if email_configured():
+            background.add_task(
+                send_password_reset, user["email"], user.get("name") or "",
+                reset_link(settings.frontend_base_url, raw_token), settings.password_reset_expire_minutes,
+            )
         if settings.app_env == "development":
             dev_reset_token = raw_token
         logger.info("Password reset requested", extra={"user_id": user["user_id"]})

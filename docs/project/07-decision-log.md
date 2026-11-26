@@ -32,6 +32,7 @@ Each entry records what was decided, what else was considered, why, and what it 
 | D-18 | **Add Groq as a provider and use free-tier models** (2026-11-26) | Remove Compare; buy API credit | Gemini and Groq have free tiers, so the demo can compare real models at no cost | OpenAI, Anthropic and xAI stay supported but hidden on the demo (`ATLAS_VISIBLE_MODELS`) |
 | D-21 | **Merge Compare and the AI Playground into one page** (2026-11-26) | Keep two similar pages | They asked the same thing in two ways, which was confusing | One page; the older Playground page was removed and its API routes remain |
 | D-22 | Show results as a table plus one full answer at a time (2026-11-26) | Side-by-side cards | Answers differ widely in length and number of sources, so columns were unreadable | Reading two answers means switching between them |
+| D-23 | Send password-reset email through Brevo's HTTPS API (2026-11-26) | SMTP; leave resets admin-assisted | Free hosts may block SMTP ports; the HTTPS API works anywhere | Needs a Brevo API key and a verified sender; sending is off without them |
 
 ## Open decisions
 

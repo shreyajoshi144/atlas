@@ -58,6 +58,7 @@ Priority uses MoSCoW. Verification names the automated tests that cover the requ
 | FR-15 | Accounts: register, sign in, signed expiring tokens, per-user data isolation | Must | `test_auth_security`, `test_authorization_isolation`, `test_api_security` | Done |
 | FR-16 | Admin routes provide metrics, monitoring, audit log and limit controls | Could | `test_metrics`, `test_milestone3_observability_safety` | Done |
 | FR-17 | The AI Playground and AtlasBench explain how they work on the page | Should | `backend/tests/js/*` (UI modules) | Done |
+| FR-18 | A password reset link can be emailed to the account's own address (optional, Brevo); the reply never reveals whether an account exists | Could | `test_password_reset_email` | Done (not yet sent through real Brevo) |
 
 ## 5. Non-functional requirements
 
@@ -88,7 +89,7 @@ Criteria 1, 2, 4, 5 and 6 were checked for 2.1.1. Criterion 3 was checked locall
 
 ## 7. Out of scope
 
-Document upload, horizontal scaling, email delivery, token revocation, voice, a mobile app, real-time collaboration, and Workflow Studio (removed, decision D-12).
+Document upload, horizontal scaling, email other than password reset, token revocation, voice, a mobile app, real-time collaboration, and Workflow Studio (removed, decision D-12).
 
 ## 8. Known limitations
 

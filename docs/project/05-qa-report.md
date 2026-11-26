@@ -35,7 +35,7 @@ flowchart TB
 
 | Suite | Result |
 |---|---|
-| Backend (`python -m pytest -q`) | **1,241 passed, 4 skipped, 0 failed** |
+| Backend (`python -m pytest -q`) | **1,245 passed, 4 skipped, 0 failed** |
 | Provider suite (`unittest`) | **121 tests, OK** |
 | Frontend unit tests (Node) | **7 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Routing 14, link safety 4, API base 6, session persistence 5) |
 | Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23. **Not re-run** since the menu changes (see section 6). |

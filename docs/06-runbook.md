@@ -86,4 +86,4 @@ curl -X PUT "$HOST/api/admin/users/$USER_ID/limits" \
 - SQLite plus local Chroma, so this isn't for horizontal scaling.
 - Cost figures are estimates from catalog prices and token counts, not invoices. Spend caps are not hard ceilings.
 - Tokens are signed but there is no revocation list. Rotating `SECRET_KEY` is the way to invalidate all sessions.
-- There is no email provider, so password-reset links are logged, not emailed.
+- Password-reset email is sent through Brevo only when `BREVO_API_KEY` and `BREVO_SENDER_EMAIL` are set. Without them no email goes out. A rejected send is logged with its status code; 401 usually means an SMTP key was used instead of an API key.

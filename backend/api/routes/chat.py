@@ -43,6 +43,33 @@ def _llm():
     return get_chat_llm().with_structured_output(ChatOutput)
 
 
+@lru_cache(maxsize=1)
+def _repository():
+    from backend.database import ResearchRepository
+    return ResearchRepository()
+
+
+def _context_from_saved_reports(user_id: str, report_id: str | None) -> list[dict[str, Any]]:
+    """Fallback when vector search finds nothing (for example on a small host that skips indexing):
+    read the user's own saved reports from the database. Every lookup is scoped to ``user_id``."""
+    reports = _repository().reports
+    if report_id:
+        ids = [report_id]
+    else:
+        ids = [row["report_id"] for row in reports.list_reports(limit=3, user_id=user_id)]
+    chunks: list[dict[str, Any]] = []
+    for rid in ids:
+        report = reports.get_report(rid, user_id=user_id)
+        if not report:
+            continue
+        text = "\n\n".join(part for part in (report.get("summary"), report.get("report_markdown")) if part)
+        chunks.append({
+            "report_id": rid, "chunk_id": f"{rid}:report", "session_id": report.get("session_id") or "",
+            "topic": report.get("topic") or "", "chunk_index": 0, "content": text[:3000], "similarity_score": 0.0,
+        })
+    return chunks
+
+
 @router.post(
     "/research",
     response_model=ApiResponse[ChatResponse],
@@ -89,6 +116,13 @@ async def research_chat(
                     "Chat context retrieval failed — answering without context",
                     extra={"error": str(exc), "error_type": type(exc).__name__},
                 )
+
+        if not retrieved_chunks:
+            try:
+                retrieved_chunks = _context_from_saved_reports(user_id, request.report_id)
+                report_ids = [c["report_id"] for c in retrieved_chunks]
+            except Exception as exc:
+                logger.warning("Saved-report fallback failed", extra={"error_type": type(exc).__name__})
 
         context_blocks = "\n\n".join(
             f"[Chunk] Topic: {item['topic']}\n"

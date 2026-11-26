@@ -2,6 +2,28 @@
 
 All notable changes to Atlas. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Release dates are the dates of the merging commits in Git. Earlier work was published as a few large commits, so the earlier entries group several milestones. See [development history](05-development-history.md) for detail.
 
+## [Unreleased]
+
+### Changed
+- **Compare and the AI Playground are now one page, AI Playground.** One question goes to up to four models; a table compares status, time, tokens, estimated cost and sources cited, and clicking a model shows its full answer, citations, grounding and usage. The older Groq-only Playground page was removed from the frontend (its API routes remain).
+- The workspace menu is Overview, Research, AI Playground and AtlasBench.
+
+### Added
+- Groq as a provider (alongside OpenAI, Anthropic, Gemini and xAI), and the free-tier models `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`.
+- `ATLAS_VISIBLE_MODELS` to limit which catalog models the page offers. The Docker image offers two Groq and two Gemini models.
+
+### Fixed
+- A key written in `.env` with an inline comment was sent with the comment by the provider client, so it was rejected.
+- **Ask Atlas answered with no context on the small-host demo**, because vector indexing is skipped there. When vector search finds nothing it now reads the user's own saved reports from the database (the open case, or the three most recent), scoped to the signed-in user.
+- **All four built-in AtlasBench configurations failed**, because they used `llama-3.3-70b-versatile` and `llama-3.1-8b-instant`, which Groq retired on 2026-08-16. They now use `openai/gpt-oss-120b` and, for the small model, `openai/gpt-oss-20b`. Retired models are no longer offered in the configuration and routing dropdowns.
+
+### Changed
+- AtlasBench explains its configurations, test questions and first run in plain language.
+
+### Removed
+- The **Compare** tab inside AtlasBench and the run-selection checkboxes. Run comparison and arbitration remain available through the API.
+- The **Discover** page (search by meaning): its Research tab, the sidebar search box and Ctrl+K shortcut, the "search by meaning" link in Cases and the topic links in Insights. It returned nothing on the small-host demo, and Cases and Library already cover finding a report. The `POST /api/search/semantic` route remains.
+
 ## [2.1.1] - 2026-11-25
 
 Fixes found by running the live deployment on Render's free tier (512 MB memory, a fraction of a CPU).

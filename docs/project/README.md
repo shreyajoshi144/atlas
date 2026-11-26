@@ -24,17 +24,17 @@ These are the reference facts. If another document disagrees with this table, th
 | First commit | 2026-07-02 |
 | Current release | **2.1.1**, 2026-11-25 |
 | Live demo | https://atlas-cite-check.onrender.com (Render free tier) |
-| Workspace areas | **Five**: Overview, Research, AI Playground, Compare, AtlasBench (Routing & cost is a tab inside AtlasBench) |
+| Workspace areas | **Four**: Overview, Research, AI Playground, AtlasBench (Routing & cost is a tab inside AtlasBench) |
 | Research pipeline | 12-node LangGraph workflow; closed registry of 5 tools |
 | API | **89** operations on 75 paths |
-| Compare providers | 4 (OpenAI, Anthropic, Gemini, xAI); no provider calls were made in testing |
+| Model providers | 5 supported in code (Groq, OpenAI, Anthropic, Gemini, xAI). The demo offers 2 Groq and 2 Gemini free-tier models; those four were called for real in local checks. OpenAI, Anthropic and xAI were tested against fakes only |
 | AtlasBench | 8 frozen tasks, 6 deterministic measures, no LLM judge |
-| Compare grounding suite | 24 labelled cases |
-| Backend tests | **1,244 passed, 4 skipped**, 0 failed (2026-11-25) |
+| Grounding evaluation suite | 24 labelled cases |
+| Backend tests | **1,241 passed, 4 skipped**, 0 failed (2026-11-26) |
 | Provider suite | **121** tests, OK (2026-11-25) |
-| Frontend unit tests | **8** files, all pass (2026-11-25) |
-| Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23; **not re-run** after the 2026-11-25 menu change |
-| Live provider results | **None.** No benchmark or comparison has been run against live models, so no model rankings exist. |
+| Frontend unit tests | **7** files, all pass (2026-11-26) |
+| Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23; **not re-run** after the menu changes of 2026-11-25 and 2026-11-26 |
+| Live model rankings | **None.** Single live questions work, but the 24-case evaluation has not been run to completion on live models, so no ranking exists. |
 | Real users | None. The user personas are hypotheses. |
 | Known hosting limit | Free tier: 512 MB memory, disk wiped at every restart, first request after idle about a minute |
 

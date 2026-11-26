@@ -95,7 +95,7 @@ def run():
         ok(pg.get_attribute('.topnav-item[data-nav="research"]', 'aria-current') == 'page', 'active area exposed via aria-current')
         ok(pg.locator('input[name="rMode"]').count() == 5, 'five research modes')
         pg.click('#rRunBtn'); ok('at least 3' in pg.inner_text('#toastHost'), 'too-short question rejected with a message')
-        for sub in ['history', 'kb', 'search', 'knowledge', 'analytics']:
+        for sub in ['history', 'kb', 'knowledge', 'analytics']:
             pg.click(f'.subtab[data-sub="{sub}"]'); pg.wait_for_timeout(350)
             ok(len(pg.inner_html('#mainView')) > 60, f'sub-view {sub} renders')
         pg.click('.subtab[data-sub="history"]'); pg.wait_for_selector('.case-row'); ok(pg.locator('.case-row').count() == 2, 'Cases lists reports')
@@ -106,7 +106,6 @@ def run():
             ok(len(pg.inner_html('#mainView')) > 80 and pg.locator(f'.topnav-item[data-nav="{key}"].active').count() == 1, f'{key} renders and is active')
             ok(pg.locator('#subnav.show').count() == 0, f'sub-bar hidden outside Research ({key})')
         pg.click('#accountTrigger'); pg.click('#settingsMenuItem'); pg.wait_for_selector('#setModel'); ok(pg.locator('.settings-group').count() == 6, 'Settings renders six groups')
-        pg.keyboard.press('Control+k'); ok(pg.locator('#searchBar').is_visible(), 'Ctrl+K opens search'); pg.keyboard.press('Escape')
         pg.click('#chatFabToggle'); ok(pg.locator('#chatFabWrap.open').count() == 1, 'Ask Atlas widget opens')
         ok(not pg.errs, 'no script errors across the workspace: %s' % pg.errs[:1])
         pg.click('#chatFabToggle'); pg.click('#accountTrigger'); pg.click('#logoutMenuItem'); pg.click('#logoutModal .btn-danger'); pg.wait_for_url(re.compile('auth.html'), timeout=5000); ok(True, 'sign out returns to sign-in'); pg.context.close()

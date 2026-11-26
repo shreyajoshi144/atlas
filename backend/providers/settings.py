@@ -17,11 +17,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-PROVIDERS = ("openai", "anthropic", "gemini", "xai")
+PROVIDERS = ("groq", "openai", "anthropic", "gemini", "xai")
 
-PROVIDER_LABELS = {"openai": "OpenAI", "anthropic": "Anthropic", "gemini": "Google Gemini", "xai": "xAI Grok"}
+PROVIDER_LABELS = {"groq": "Groq", "openai": "OpenAI", "anthropic": "Anthropic", "gemini": "Google Gemini", "xai": "xAI Grok"}
 
 KEY_ENV = {
+    "groq": ("GROQ_API_KEY",),
     "openai": ("OPENAI_API_KEY",),
     "anthropic": ("ANTHROPIC_API_KEY",),
     "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
@@ -29,6 +30,7 @@ KEY_ENV = {
 }
 
 DEFAULT_BASE_URL = {
+    "groq": "https://api.groq.com/openai",
     "openai": "https://api.openai.com",
     "anthropic": "https://api.anthropic.com",
     "gemini": "https://generativelanguage.googleapis.com",
@@ -36,6 +38,7 @@ DEFAULT_BASE_URL = {
 }
 
 _ALLOWED_HOSTS = {
+    "groq": {"api.groq.com"},
     "openai": {"api.openai.com"},
     "anthropic": {"api.anthropic.com"},
     "gemini": {"generativelanguage.googleapis.com"},
@@ -61,6 +64,10 @@ def _read_dotenv(path: Path) -> dict[str, str]:
             v = v.strip()
             if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
                 v = v[1:-1]
+            else:
+                # An unquoted value may carry an inline comment (``KEY=value  # note``), as the
+                # rest of the app's dotenv loader allows. A "#" without a space stays part of it.
+                v = re.split(r"\s+#", v, maxsplit=1)[0].strip()
             out[k.strip().removeprefix("export ").strip()] = v
     except OSError:
         pass

@@ -308,6 +308,7 @@ class GeminiAdapter(Adapter):
 
 
 ADAPTERS: dict[str, Adapter] = {
+    "groq": OpenAICompatAdapter("groq"),          # Groq serves the same Responses API under /openai
     "openai": OpenAICompatAdapter("openai"),
     "xai": OpenAICompatAdapter("xai"),
     "anthropic": AnthropicAdapter(),

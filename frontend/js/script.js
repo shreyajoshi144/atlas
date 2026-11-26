@@ -205,7 +205,7 @@ async function checkHealth() {
     if (!r.ok) { setHealth('offline'); return; }
     // Backend responded, so it's reachable — but "reachable" and "fully
     // healthy" aren't the same thing: embeddings_available tells us whether
-    // Atlas AI chat context and Discover semantic search actually have a
+    // Atlas AI chat context actually has a
     // working embedding backend, or are silently degraded even though the
     // API itself is up.
     let body = null;
@@ -241,19 +241,18 @@ Atlas.state = {
 const NAV_LABELS = {
   home: ['Atlas', 'Home'], research: ['Atlas', 'Research'],
   playground: ['Atlas', 'AI Playground'],
-  compare: ['Atlas', 'Compare'],
   history: ['Atlas', 'Cases'],
-  search: ['Atlas', 'Cases', 'Search'], analytics: ['Atlas', 'Insights'],
+  analytics: ['Atlas', 'Insights'],
   kb: ['Atlas', 'Library'], case: ['Atlas', 'Cases', 'Case'],
   settings: ['Atlas', 'Settings'], knowledge: ['Atlas', 'Knowledge'], atlasbench: ['Atlas', 'AtlasBench'],
 };
 
 // Information architecture: six areas on the top bar; Research owns its working views as a sub-bar.
 const AREA_OF = {
-  home: 'home', research: 'research', history: 'research', kb: 'research', search: 'research', knowledge: 'research', analytics: 'research', case: 'research',
-  playground: 'playground', compare: 'compare', atlasbench: 'atlasbench', settings: null,
+  home: 'home', research: 'research', history: 'research', kb: 'research', knowledge: 'research', analytics: 'research', case: 'research',
+  playground: 'playground', atlasbench: 'atlasbench', settings: null,
 };
-const RESEARCH_TABS = [['research', 'New case'], ['history', 'Cases'], ['kb', 'Library'], ['search', 'Discover'], ['knowledge', 'Knowledge map'], ['analytics', 'Insights']];
+const RESEARCH_TABS = [['research', 'New case'], ['history', 'Cases'], ['kb', 'Library'], ['knowledge', 'Knowledge map'], ['analytics', 'Insights']];
 function renderSubnav(area, navKey) {
   const bar = $('#subnav'); if (!bar) return;
   if (area !== 'research') { bar.classList.remove('show'); bar.innerHTML = ''; return; }
@@ -264,6 +263,7 @@ function renderSubnav(area, navKey) {
 }
 Atlas.nav = function(view, opts) {
   // AtlasBench always opens on its Runs tab; Routing & cost is one of its tabs (routing.js).
+  if (view === 'compare') view = 'playground';   // old links: Compare is now part of the AI Playground
   const navKey = view;
   if (view === 'atlasbench' && !(opts && opts.tab)) { opts = Object.assign({}, opts, { tab: 'runs' }); }
   Atlas.state.view = view;
@@ -293,11 +293,11 @@ function crumbsHtml(view) {
 
 function render(opts) {
   const v = Atlas.state.view;
-  $('#chatFabWrap')?.classList.toggle('pg-hide-floating-chat', v === 'playground' || v === 'compare');
+  $('#chatFabWrap')?.classList.toggle('pg-hide-floating-chat', v === 'playground');
   const main = $('#mainView'), ctx = $('#contextPanel');
   main.innerHTML = ''; ctx.innerHTML = '';
   $('#statusBarCase').textContent = '';
-  const views = { home: viewHome, research: viewResearch, playground: (main, ctx, opts) => window.AtlasPlayground?.render(main, ctx, opts), compare: (main, ctx, opts) => window.AtlasCompare?.render(main, ctx, opts), history: viewHistory, search: viewSearch, analytics: viewAnalytics, kb: viewKB, case: viewCase, settings: viewSettings, knowledge: viewKnowledge, atlasbench: viewAtlasBench };
+  const views = { home: viewHome, research: viewResearch, playground: (main, ctx, opts) => window.AtlasCompare?.render(main, ctx, opts), history: viewHistory, analytics: viewAnalytics, kb: viewKB, case: viewCase, settings: viewSettings, knowledge: viewKnowledge, atlasbench: viewAtlasBench };
   (views[v] || viewHome)(main, ctx, opts || {});
   $('#appRoot').classList.toggle('ctx-collapsed', !ctx.innerHTML.trim());
 }
@@ -325,29 +325,10 @@ document.addEventListener('click', (e) => {
   if (wrap && !wrap.contains(e.target)) $('#accountDropdown').classList.remove('show');
 });
 
-$('#globalSearch').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.value.trim()) {
-    Atlas.nav('search', { prefillQuery: e.target.value.trim() });
-    $('#searchBar').style.display = 'none';
-  }
-});
-function openSearchBar() { $('#searchBar').style.display = 'flex'; $('#globalSearch').focus(); }
-$('#searchToggle').addEventListener('click', (e) => {
-  e.stopPropagation();
-  const bar = $('#searchBar');
-  bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
-  if (bar.style.display === 'flex') $('#globalSearch').focus();
-});
-document.addEventListener('click', (e) => {
-  const bar = $('#searchBar');
-  if (bar.style.display !== 'none' && !bar.contains(e.target) && e.target.id !== 'searchToggle') bar.style.display = 'none';
-});
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearchBar(); }
   if (e.key === 'Escape') {
     closeMobileNav();
     $('#accountDropdown')?.classList.remove('show');
-    $('#searchBar').style.display = 'none';
     $$('.modal-overlay.show').forEach(m => m.classList.remove('show'));
   }
 });
@@ -441,7 +422,7 @@ async function viewHome(main, ctx) {
         <aside aria-labelledby="ovBeginTitle">
           <div class="ov-sec-title"><h2 id="ovBeginTitle">Where to begin</h2></div>
           <ul class="begin">
-            ${[['research','Research','Ask a question; get sources, claims and a verified brief.'],['playground','AI Playground','Put one question to up to three models.'],['compare','Compare','Ask OpenAI, Anthropic, Google and xAI the same question and see measured cost, speed and sources.'],['atlasbench','AtlasBench','Score models on frozen tasks, compare runs, and set cost-aware routing.']].map(([k, n, d]) => `<li><button type="button" data-go="${k}"><span><b>${n}</b><span class="d">${d}</span></span><span class="begin-go">→</span></button></li>`).join('')}
+            ${[['research','Research','Ask a question; get sources, claims and a verified brief.'],['playground','AI Playground','Ask several models the same question and compare answers, cost and speed.'],['atlasbench','AtlasBench','Score models on frozen tasks, compare runs, and set cost-aware routing.']].map(([k, n, d]) => `<li><button type="button" data-go="${k}"><span><b>${n}</b><span class="d">${d}</span></span><span class="begin-go">→</span></button></li>`).join('')}
           </ul>
         </aside>
       </div>
@@ -451,7 +432,7 @@ async function viewHome(main, ctx) {
   $$('[data-go]').forEach(b => b.addEventListener('click', () => Atlas.nav(b.dataset.go)));
 
   const settle = async (path, params) => { try { return (await apiGetSilent(path, params))?.data || null; } catch { return undefined; } };
-  const [reports, convos] = await Promise.all([settle('/history/reports', { limit: 6, offset: 0 }), settle('/playground/conversations')]);
+  const [reports, convos] = await Promise.all([settle('/history/reports', { limit: 6, offset: 0 }), settle('/compare/runs')]);
   const box = $('#ovActivity'); if (!box || Atlas.state.view !== 'home') return;
   if (reports === undefined && convos === undefined) {
     box.innerHTML = emptyState('!', 'Recent activity is unavailable', 'Atlas could not reach the server. Your work is not lost; try again in a moment.');
@@ -463,7 +444,7 @@ async function viewHome(main, ctx) {
   if (kpiBox) {
     const cards = [
       ['Research cases', fmtNum(reports && reports.total != null ? reports.total : recent.length), 'in your Library'],
-      ['Playground conversations', fmtNum(((convos && convos.items) || []).length), 'saved'],
+      ['Playground runs', fmtNum(((convos && convos.items) || []).length), 'saved'],
     ];
     if (scored.length) cards.push(['Average verification', fmtPct(scored.reduce((t, r) => t + r.verification_score, 0) / scored.length), `across your ${scored.length} latest case${scored.length === 1 ? '' : 's'}`]);
     kpiBox.innerHTML = cards.map(k => `<div class="kpi-card"><small>${escapeHtml(k[0])}</small><b>${escapeHtml(k[1])}</b><span>${escapeHtml(k[2])}</span></div>`).join('');
@@ -471,11 +452,11 @@ async function viewHome(main, ctx) {
   }
   const items = [
     ...((reports && reports.reports) || []).map(r => ({ kind: 'case', id: r.report_id, title: r.topic, when: r.created_at, meta: `${fmtDate(r.created_at)} · ${verdictLabel(r.verification_verdict)}` })),
-    ...((convos && convos.items) || []).map(c => ({ kind: 'conversation', id: c.conversation_id, title: c.title || 'Untitled conversation', when: c.updated_at, meta: `${fmtDate(c.updated_at)} · ${Number(c.message_count) || 0} msgs` })),
+    ...((convos && convos.items) || []).map(c => ({ kind: 'conversation', id: c.run_id, title: c.prompt || 'Untitled run', when: c.created_at, meta: `${fmtDate(c.created_at)} · ${Number(c.model_count) || 0} models` })),
   ].sort((x, y) => new Date(y.when) - new Date(x.when)).slice(0, 6);
   if (!items.length) {
     $('#ovSub').textContent = 'Nothing here yet. Your first research case is the best place to start.';
-    box.innerHTML = emptyState('§', 'No activity yet', 'Open a research case and it will appear here, along with your Playground conversations.');
+    box.innerHTML = emptyState('§', 'No activity yet', 'Open a research case and it will appear here, along with your Playground runs.');
     return;
   }
   $('#ovSub').textContent = 'Pick up where you left off, or open a new line of inquiry.';
@@ -483,7 +464,7 @@ async function viewHome(main, ctx) {
   box.innerHTML = items.map(activityRowHtml).join('');
   $$('.act-row').forEach(b => b.addEventListener('click', () => {
     if (b.dataset.act === 'case') openHistoryCase(b.dataset.id);
-    else { Atlas.nav('playground'); window.AtlasPlayground?.openConversation?.(b.dataset.id); }
+    else { Atlas.nav('playground'); window.AtlasCompare?.openRun?.(b.dataset.id); }
   }));
 }
 function recentCaseCard(r, opts) {
@@ -574,7 +555,7 @@ function viewResearch(main, ctx, opts) {
           <div class="field-label">Options</div>
           <label class="check-row"><input type="checkbox" id="rVerify" checked><span>Verify claims<small>Cross-check claims against each other and their sources.</small></span></label>
           <label class="check-row"><input type="checkbox" id="rBrief" checked><span>Executive brief<small>Add a short summary at the top of the report.</small></span></label>
-          <label class="check-row"><input type="checkbox" id="rMemory" checked><span>Keep in Library<small>Save to memory so Playground and Ask Atlas can retrieve it.</small></span></label>
+          <label class="check-row"><input type="checkbox" id="rMemory" checked><span>Keep in Library<small>Save to memory so Ask Atlas can retrieve it.</small></span></label>
           <label class="f-label" for="rContext" style="margin-top:18px;">Context <span class="muted" style="text-transform:none;letter-spacing:0;">(optional)</span></label>
           <textarea class="input" id="rContext" rows="3" maxlength="3000" placeholder="Angle, audience or constraints"></textarea>
           <div class="rs-actions"><button class="btn" id="rRunBtn" type="button">Open case</button></div>
@@ -1512,12 +1493,10 @@ function viewHistory(main, ctx) {
         <select class="input" id="hLimit"><option value="10">10 results</option><option value="20" selected>20 results</option><option value="50">50 results</option></select>
         <select class="input" id="hSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="verification">Highest verification</option></select>
       </div>
-      <div style="margin-bottom:14px;"><span class="small muted" id="hSearchByMeaning" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;">Not finding it? Search by meaning instead →</span></div>
       <div id="hList">${skeletonBlock('90px')}${skeletonBlock('90px')}${skeletonBlock('90px')}</div>
     </div>
   `;
   ctx.innerHTML = `<div class="s-section"><div class="s-title">Tip</div><div class="small muted">Click any case to open its Overview, Sources, and Evidence.</div></div>`;
-  $('#hSearchByMeaning').addEventListener('click', () => Atlas.nav('search', { prefillQuery: $('#hFilter').value.trim() || undefined }));
 
   const load = async () => {
     const params = { limit: $('#hLimit').value, offset: 0 };
@@ -1541,79 +1520,6 @@ function viewHistory(main, ctx) {
   $('#hLimit').addEventListener('change', load);
   $('#hSort').addEventListener('change', load);
   load();
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   VIEW: SEARCH (Discover)
-   ══════════════════════════════════════════════════════════════════════ */
-function viewSearch(main, ctx, opts) {
-  main.innerHTML = `
-    <div class="page">
-      <div class="crumbs">${crumbsHtml('search')}</div>
-      <div class="page-title">Search your cases</div>
-      <div class="page-desc">Find past research by meaning, not just keywords.</div>
-      <div class="hr"></div>
-      <div class="search-box">
-        <input class="input" id="sQuery" placeholder="e.g. transformer architecture trade-offs for edge deployment" maxlength="500" style="font-family:var(--sans);" />
-        <div class="chip-row">
-          ${EXAMPLE_TOPICS.map(t => `<span class="chip" onclick="document.getElementById('sQuery').value=${escapeHtml(JSON.stringify(t))};runSemanticSearch();">↳ ${escapeHtml(t.slice(0,40))}${t.length>40?'…':''}</span>`).join('')}
-        </div>
-        <div class="flex gap-10 mt-14">
-          <button class="btn" id="sBtn" onclick="runSemanticSearch()">🔍 Search</button>
-          <select class="input" id="sLimit" style="max-width:140px;"><option value="5" selected>5 results</option><option value="10">10</option><option value="20">20</option></select>
-        </div>
-      </div>
-      <div id="sResults" class="mt-18"></div>
-    </div>
-  `;
-  ctx.innerHTML = `<div class="s-section"><div class="s-title">How it works</div><div class="small muted" style="line-height:1.6;">Atlas indexes every case by concept, not just keyword — so "coping with chronic stress" can surface a case titled "burnout recovery strategies" even with zero shared words.</div></div>`;
-  if (opts.prefillQuery) { $('#sQuery').value = opts.prefillQuery; runSemanticSearch(); }
-  else { showBrowseCases(); }
-  $('#sQuery').addEventListener('keydown', e => { if (e.key === 'Enter') runSemanticSearch(); });
-  $('#sQuery').addEventListener('input', () => { if (!$('#sQuery').value.trim()) showBrowseCases(); });
-}
-async function showBrowseCases() {
-  const box = $('#sResults');
-  box.innerHTML = skeletonBlock('80px') + skeletonBlock('80px');
-  try {
-    const result = await apiGet('/history/reports', { limit: 6, offset: 0 });
-    const reports = result?.data?.reports || [];
-    if (!reports.length) { box.innerHTML = emptyState('🔍','Nothing filed yet','Open your first case to start building searchable memory.'); return; }
-    box.innerHTML = `<div class="small muted" style="font-family:var(--mono);margin-bottom:10px;">BROWSE YOUR CASES — or search above to find by meaning</div>` +
-      reports.map(r => `<div class="card card-hover" onclick="openHistoryCase('${r.report_id}')">
-          <div class="flex between">
-            <b style="font-family:var(--serif);color:var(--ink);">${escapeHtml(r.topic)}</b>
-            <span class="small muted" style="font-family:var(--mono);">${r.verification_score!=null ? fmtPct(r.verification_score) : '—'}</span>
-          </div>
-          <p class="small muted mt-8">${escapeHtml((r.summary||'').slice(0,160))}${(r.summary||'').length>160?'…':''}</p>
-        </div>`).join('');
-  } catch { box.innerHTML = emptyState('🔍','Search your research','Type above, or open a case from Cases.'); }
-}
-async function runSemanticSearch() {
-  const query = $('#sQuery').value.trim();
-  if (!query) { toast('Enter a search query.', 'err'); return; }
-  if (query.length < 2) { toast('Query must be at least 2 characters.', 'err'); return; }
-  const btn = $('#sBtn'); btn.disabled = true;
-  const box = $('#sResults'); box.innerHTML = skeletonBlock('80px') + skeletonBlock('80px');
-  try {
-    const result = await apiPost('/search/semantic', { query, limit: parseInt($('#sLimit').value,10) });
-    btn.disabled = false;
-    if (!result || !result.success) { console.error('semantic search failed:', result); box.innerHTML = emptyState('!','Search failed','Please try again in a moment.'); return; }
-    const results = result.data.results || [];
-    if (!results.length) { box.innerHTML = emptyState('🔍','No matching research found','Try a different query or run more research first.'); return; }
-    box.innerHTML = `<div class="small muted" style="font-family:var(--mono);margin-bottom:10px;">FOUND <b style="color:var(--wine)">${results.length}</b> RELATED CASES</div>` +
-      results.map((r,i) => {
-        const c = scoreColor(r.similarity_score);
-        return `<div class="card card-hover" style="border-left:3px solid ${c};" onclick="openHistoryCase('${r.report_id}')">
-          <div class="flex between">
-            <div class="flex gap-10"><span class="badge badge-neutral">#${i+1}</span><b style="font-family:var(--serif);color:var(--ink);">${escapeHtml(r.topic)}</b></div>
-            <span style="font-family:var(--mono);color:${c};font-weight:700;">${r.similarity_score!=null?r.similarity_score.toFixed(2):'—'}</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(r.similarity_score||0)*100}%;background:${c};"></div></div>
-          <p class="small muted mt-8">${escapeHtml((r.summary||'').slice(0,200))}${(r.summary||'').length>200?'…':''}</p>
-        </div>`;
-      }).join('');
-  } catch (e) { console.error('semantic search failed:', e); btn.disabled = false; box.innerHTML = emptyState('!','Search failed','Please try again in a moment.'); }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1679,17 +1585,14 @@ async function loadAnalytics() {
           (d.verification_score_trend||[]).length ? barChartSvg(d.verification_score_trend.map(v=>({label:v.date, value:v.avg_score, color:scoreHex(v.avg_score)})), true) : emptyState('✅','No verification trend yet',''))}
       </div>
       <div class="grid grid-2 mt-14">
-        ${chartCard('MOST RESEARCHED TOPICS', 'Click a topic to search your memory for it in Discover.',
-          (d.top_topics||[]).length ? hBarList(d.top_topics.map(t=>({label:t.topic, value:t.count})), false, true) : emptyState('📊','No topic data yet',''))}
+        ${chartCard('MOST RESEARCHED TOPICS', 'The topics you have researched most often.',
+          (d.top_topics||[]).length ? hBarList(d.top_topics.map(t=>({label:t.topic, value:t.count}))) : emptyState('📊','No topic data yet',''))}
         ${chartCard('SOURCE DOMAIN DISTRIBUTION', 'Which domains your evidence is coming from most often, across all cases.',
           (d.source_domain_distribution||[]).length ? hBarList(d.source_domain_distribution.map(t=>({label:t.domain, value:t.count}))) : emptyState('🌐','No domain data yet',''))}
       </div>
       ${chartCard('⚡ AVERAGE LATENCY BREAKDOWN', 'Where the time goes in an average case: fetching sources vs. everything after (ranking, verification, writing).',
         latencyBars(d.average_retrieval_latency_ms||0, d.average_execution_time_ms||1))}
     `;
-    $$('.hbar-clickable').forEach(row => {
-      row.addEventListener('click', () => Atlas.nav('search', { prefillQuery: row.dataset.topic }));
-    });
   } catch { body.innerHTML = emptyState('!','Failed to load analytics',''); }
 }
 function lineChartSvg(points) {
@@ -1729,7 +1632,7 @@ function barChartSvg(items, isPct) {
 function hBarList(items, _unused, clickable) {
   const max = Math.max(...items.map(i=>i.value), 1);
   return `<div class="grid" style="gap:8px;">` + items.map(it => `
-    <div class="${clickable ? 'hbar-clickable' : ''}" ${clickable ? `data-topic="${escapeHtml(it.label)}" style="cursor:pointer;"` : ''} title="${clickable ? 'Search this topic in Discover' : ''}">
+    <div class="${clickable ? 'hbar-clickable' : ''}" ${clickable ? `data-topic="${escapeHtml(it.label)}" style="cursor:pointer;"` : ''} >
       <div class="flex between small" style="margin-bottom:3px;"><span class="${clickable ? '' : 'muted'}" style="${clickable ? 'color:var(--wine);' : ''}">${escapeHtml(it.label)}</span><span style="font-family:var(--mono);color:var(--ink);">${it.value}</span></div>
       <div class="bar-track"><div class="bar-fill" style="width:${(it.value/max)*100}%;background:var(--wine);"></div></div>
     </div>`).join('') + `</div>`;
@@ -1775,7 +1678,7 @@ async function loadSettings() {
     const group = (title, desc, fields) => `<section class="settings-group"><div><h3>${title}</h3><div class="small muted">${desc}</div></div><div class="settings-fields">${fields}</div></section>`;
     body.innerHTML = `
       ${group('Environment', 'Where this Atlas deployment is running.', `<div class="grid grid-2"><div><span class="small muted">Application</span><div style="font-family:var(--mono);">${escapeHtml(s.app_name || '—')}</div></div><div><span class="small muted">Environment</span><div style="font-family:var(--mono);">${escapeHtml(s.app_env || '—')}</div></div></div>`)}
-      ${group('Research model', 'Which language model writes reports, verifies claims, and answers chat questions.', `<label class="sr-only" for="setModel">Research model</label><input class="input" id="setModel" value="${escapeHtml(s.openai_model || '')}" placeholder="e.g. llama-3.3-70b-versatile" style="font-family:var(--mono);" />`)}
+      ${group('Research model', 'Which language model writes reports, verifies claims, and answers chat questions.', `<label class="sr-only" for="setModel">Research model</label><input class="input" id="setModel" value="${escapeHtml(s.openai_model || '')}" placeholder="e.g. openai/gpt-oss-120b" style="font-family:var(--mono);" />`)}
       ${group('Source fetch limit', 'Max search results pulled from Tavily per case, before ranking narrows them down. Higher finds more evidence but costs more per case.', `<label class="sr-only" for="setTavilyMax">Source fetch limit</label><input class="input" id="setTavilyMax" type="number" min="1" max="20" value="${s.tavily_max_results ?? 10}" />`)}
       ${group('Default sources per case', 'How many top-ranked sources a new case uses by default.', `<label class="sr-only" for="setTopK">Default sources per case</label><input class="input" id="setTopK" type="number" min="1" max="20" value="${s.default_top_k_urls ?? 5}" />`)}
       ${group('Scrape timeout', 'Seconds to wait for a slow source page before giving up on it.', `<label class="sr-only" for="setScrapeTimeout">Scrape timeout</label><input class="input" id="setScrapeTimeout" type="number" min="5" max="120" value="${s.scrape_timeout_seconds ?? 20}" />`)}

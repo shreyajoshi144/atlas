@@ -31,19 +31,22 @@ flowchart TB
     E --> H["Hosted checks<br/>read-only probes of the live site"]
 ```
 
-## 4. Results (2026-11-25)
+## 4. Results (2026-11-26)
 
 | Suite | Result |
 |---|---|
-| Backend (`python -m pytest -q`) | **1,244 passed, 4 skipped, 0 failed** |
+| Backend (`python -m pytest -q`) | **1,241 passed, 4 skipped, 0 failed** |
 | Provider suite (`unittest`) | **121 tests, OK** |
-| Frontend unit tests (Node) | **8 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Playground 12, Routing 14, link safety 4, API base 6, session persistence 5) |
-| Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23. **Not re-run** since the menu change (see section 6). |
+| Frontend unit tests (Node) | **7 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Routing 14, link safety 4, API base 6, session persistence 5) |
+| Browser end-to-end | Compare 42/42 and Frontend 113/113 on 2026-11-23. **Not re-run** since the menu changes (see section 6). |
 | Python compile and JS syntax | Pass |
 | Hosted read-only checks | `/ready` 200; `/health` ok with `embeddings_mode: onnx`; `/docs` 404; `/api/auth/me` 401 without a token; pages 200 with no console errors |
+| Local feature-by-feature check with real Groq and Tavily keys (2026-11-26) | Research, Ask Atlas, Cases, Insights, Library, Knowledge Map, Challenge, notes, AI Playground, all four AtlasBench presets and routing policy save and activate worked |
 | Local research run in small-host mode | Completed in about 40 to 65 s over three runs; the report appeared in the Library; the same account signed in again |
 
 **Skipped tests (4).** Three need `backend/tests/data/m5_retrieval_cases.json`, which was never committed; one needs the optional `posthog` package. They are skips, not passes (backlog B-11).
+
+The 2026-11-26 figures reflect the merge of Compare into the AI Playground: three tests of the removed page were deleted.
 
 ## 5. Requirements coverage
 
@@ -54,7 +57,7 @@ Every requirement in the [PRD](01-prd.md) names the tests that verify it. Covera
 | Research pipeline and agents | FR-01 to FR-04 | Milestone, planner, execution, tool-registry and verification tests | Pass |
 | Retrieval and knowledge | FR-05 to FR-07 | Hybrid retrieval, Knowledge Map and Challenge tests | Pass (3 skips) |
 | Notes, chat and views | FR-08, FR-09 | Notes and API tests, browser e2e | Pass |
-| Evaluation | FR-10 to FR-13 | Playground, provider suite, AtlasBench, arbitration, routing tests | Pass (fake providers only) |
+| Evaluation | FR-10 to FR-13 | Playground, provider suite, AtlasBench, arbitration, routing tests | Pass (Groq and Gemini also checked live) |
 | Budgets and accounts | FR-14 to FR-16 | Spend-cap, runtime-control, auth, isolation and metrics tests | Pass |
 | Non-functional | NFR-01 to NFR-09 | Security, reliability, isolation, metrics suites and CI | Pass; NFR-07 hosted confirmation open |
 
@@ -62,7 +65,7 @@ Every requirement in the [PRD](01-prd.md) names the tests that verify it. Covera
 
 | Gap | Why it matters | Backlog |
 |---|---|---|
-| Live provider calls (Groq, Tavily, OpenAI, Anthropic, Gemini, xAI) | Request and response shapes were tested against fakes only | B-02 |
+| Live calls to OpenAI, Anthropic and xAI | Tested against fakes only; Groq, Tavily and Gemini were checked live | B-02 |
 | Model quality | No benchmark ran on real models, so there are no rankings | B-02 |
 | Hosted research, sign-up and sign-in after the 2026-11-25 fixes | Verified locally with the same settings; the free instance is slower | B-01 |
 | Browser end-to-end after the menu change | The scripts were updated but Playwright was not installed that day | B-04 |
@@ -92,6 +95,8 @@ Severity: Critical (product unusable), High (feature broken or security issue), 
 | DEF-14 | Research failed on a 512 MB host (about 870 MB needed); app restarted and accounts were lost | Critical | Live site | Small-host mode | **Fixed locally; hosted confirmation open (B-01)** |
 | DEF-15 | API docs public in production | Low | Live site | Off unless `ENABLE_API_DOCS=true` | Closed |
 | DEF-16 | The Back button could show a signed-out user's page from the browser cache | Medium | User report | Restored pages reload (defensive; the exact report was not reproduced on a healthy server) | Closed (unconfirmed reproduction) |
+| DEF-18 | Ask Atlas had no context on the small-host demo | High | Feature-by-feature check | Falls back to saved reports; verified with real calls | Closed (hosted check pending) |
+| DEF-19 | All four AtlasBench presets used retired model IDs and failed | High | Feature-by-feature check | Presets updated; all four completed with real calls | Closed (hosted check pending) |
 | DEF-17 | Earlier batches: unregistered router, stale benchmark runs, month names treated as entities, unknown costs shown as free | Medium | Hardening batches 1 and 2 | Fixed with tests | Closed |
 
 ## 8. Exit criteria and sign-off

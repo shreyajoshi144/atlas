@@ -458,10 +458,10 @@ class AskFallback(Base):
 class Catalogue(Base):
     async def test_models_payload_shape_and_no_secrets(self):
         p = self.build().models_payload()
-        self.assertEqual({x["id"] for x in p["providers"]}, {"openai", "anthropic", "gemini", "xai"})
+        self.assertEqual({x["id"] for x in p["providers"]}, {"groq", "openai", "anthropic", "gemini", "xai"})
         self.assertTrue(all(isinstance(x["configured"], bool) for x in p["providers"]))
-        self.assertEqual(len(p["models"]), 11)
-        self.assertEqual(sum(1 for m in p["models"] if m["default"]), 4)
+        self.assertEqual(len(p["models"]), 15)
+        self.assertEqual(sum(1 for m in p["models"] if m["default"]), 5)
         blob = json.dumps(p)
         for k in KEYS.values():
             self.assertNotIn(k, blob)

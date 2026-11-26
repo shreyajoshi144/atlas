@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Atlas turns a question into a research report in which every claim links to its source and carries a verification label, and it measures the models behind that research with deterministic, repeatable tests. It was built by one person over about five months, hardened through eleven milestones and several bounded repair batches, deployed in a single container, and documented. The first public deployment exposed hosting problems that local tests could not, which were then fixed and the scope reduced to five areas.
+Atlas turns a question into a research report in which every claim links to its source and carries a verification label, and it measures the models behind that research with deterministic, repeatable tests. It was built by one person over about five months, hardened through eleven milestones and several bounded repair batches, deployed in a single container, and documented. The first public deployment exposed hosting problems that local tests could not, which were then fixed and the scope reduced to four areas.
 
 ## 2. Objectives against outcomes
 
@@ -29,7 +29,7 @@ Atlas turns a question into a research report in which every claim links to its 
 
 | Deliverable | Status |
 |---|---|
-| Application: FastAPI API (89 operations), LangGraph research pipeline, static frontend with five areas | Delivered |
+| Application: FastAPI API (89 operations), LangGraph research pipeline, static frontend with four areas | Delivered |
 | Evaluation: AtlasBench, Compare grounding suite, routing and budgets | Delivered |
 | Container image (amd64 and arm64) and CI | Delivered |
 | Documentation set (`docs/`, nine numbered documents plus changelog) | Delivered |
@@ -44,6 +44,9 @@ Atlas turns a question into a research report in which every claim links to its 
 | Runtime & Control folded into AtlasBench | 2.1.1 | [D-13](07-decision-log.md) |
 | Small-host mode added | 2.1.1 | [D-11](07-decision-log.md) |
 | API docs off in production | 2.1.1 | [D-14](07-decision-log.md) |
+| Discover page removed | after 2.1.1 | [D-19](07-decision-log.md) |
+| AtlasBench Compare tab removed | after 2.1.1 | [D-20](07-decision-log.md) |
+| Compare merged into the AI Playground; Groq and free-tier Gemini added | after 2.1.1 | [D-18](07-decision-log.md), [D-21](07-decision-log.md) |
 
 ## 5. Schedule
 
@@ -51,7 +54,7 @@ Delivered in releases 1.0.0 (2026-07-02), 2.0.0 (2026-10-28), 2.1.0 (2026-11-23)
 
 ## 6. Quality
 
-Backend 1,244 passed and 4 skipped; provider suite 121 OK; frontend unit tests 8 files pass; browser tests 42/42 and 113/113 on 2026-11-23 and not re-run since. Seventeen defect groups were logged; all are closed except DEF-14, which is fixed locally and awaits hosted confirmation. Verdict: **conditional pass** ([QA report](05-qa-report.md)).
+Backend 1,241 passed and 4 skipped; provider suite 121 OK; frontend unit tests 7 files pass; browser tests 42/42 and 113/113 on 2026-11-23 and not re-run since. Nineteen defect groups were logged; all are closed except DEF-14, which is fixed locally and awaits hosted confirmation (DEF-18 and DEF-19 were verified locally and also need a hosted check). Verdict: **conditional pass** ([QA report](05-qa-report.md)).
 
 ## 7. Risks and issues at closure
 

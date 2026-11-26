@@ -518,3 +518,18 @@ body.ws .input, body.ws .form-control, body.ws select.input, body.ws textarea.in
 body.ws .input:focus, body.ws .form-control:focus { border-color: var(--mauve); }
 body.ws .badge { border-radius: 999px; }
 @media (max-width: 600px) { .ov-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .kpi-card { padding: 13px 14px; } .kpi-card b { font-size: 1.55rem; } .kpi-card:nth-child(3):last-child { grid-column: 1 / -1; } }
+
+/* AI Playground results: a comparison table, then one model's full answer */
+.cmp-table-wrap { overflow-x: auto; margin: 8px 0; }
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cmp-table th, .cmp-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.cmp-table tbody tr.is-active { background: var(--card); box-shadow: inset 3px 0 0 var(--wine); }
+.cmp-table button { background: none; border: none; padding: 0; font: 600 13px var(--sans); color: var(--wine); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.cmp-viewer .cmp-card { width: 100%; }
+.cmp-viewer .pg-answer { line-height: 1.7; overflow-wrap: anywhere; }
+/* AI Playground layout: full-width workspace (history below), compact model choices */
+.cmp-page .pg-layout { display: flex; flex-direction: column; gap: 16px; }
+.cmp-page .pg-workspace { order: 1; width: 100%; }
+.cmp-page .pg-history { order: 2; width: 100%; }
+.cmp-page .cmp-prov .pg-model-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.cmp-page .cmp-choice small:nth-of-type(n+2) { display: none; }

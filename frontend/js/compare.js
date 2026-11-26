@@ -185,7 +185,7 @@
       ${flags.length ? `<div class="pg-warning" role="status">Safety notes: ${flags.map(esc).join(', ')}</div>` : ''}
       <details class="cmp-det" ${ok ? 'open' : ''}><summary>Citations (${Array.isArray(r.citations) ? r.citations.length : 0})</summary>${citationsHtml(r.citations)}</details>
       <details class="cmp-det"><summary>Grounding</summary>${groundingHtml(r.grounding)}</details>
-      <details class="cmp-det" open><summary>Tokens, cost and speed</summary>${usageHtml(r)}</details>
+      <details class="cmp-det"><summary>Tokens, cost and speed</summary>${usageHtml(r)}</details>
     </article>`;
   }
 
@@ -243,16 +243,16 @@
     ['Reliability', 'In this view it means only what happened in this run: failures, time-outs and retries. A single run says little about long-term uptime.'],
     ['Structured output', 'Asking the model for a fixed JSON shape (answer plus claims and their sources) so claims can be checked one by one. Some models enforce the shape natively; others are asked politely and then validated.'],
     ['One run is an anecdote', 'Comparing answers to one question shows how models differ on that question. Only an evaluation over many test cases, with confidence intervals, can support a statement like "model A is better".'],
-    ['Evidence modes', '"Atlas evidence" gives every model the same passages, so differences are fair to compare. "Provider search" lets each provider search the web itself, so each model sees different material and answers are not directly comparable.'],
+    ['Evidence modes', '"Web sources" gives every model the same passages, so differences are fair to compare. "No evidence" means each model answers from its own knowledge and citations cannot be checked.'],
   ];
   function glossaryHtml() {
-    return `<details class="cmp-det cmp-how"><summary>How to read this page</summary><dl class="cmp-gloss">${GLOSSARY.map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`).join('')}</dl></details>`;
+    return `<details class="cmp-det cmp-how"><summary>How the AI Playground works</summary><dl class="cmp-gloss">${GLOSSARY.map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`).join('')}</dl></details>`;
   }
 
   /* ── state + view ─────────────────────────────────────────────────── */
   const S = { loaded: false, models: [], providers: [], limits: {}, disclosures: [], stale: false, verifiedOn: null,
-    selected: [], mode: 'compare', evidence: 'atlas', docs: true, web: false, structured: false, consent: false,
-    maxOut: '', prompt: '', busy: false, error: null, run: null, ask: null, runs: [], evals: null, key: null };
+    selected: [], mode: 'compare', evidence: 'none', docs: false, web: true, structured: false, consent: false,
+    maxOut: '', prompt: '', busy: false, error: null, run: null, active: null, ask: null, runs: [], evals: null, key: null };
 
   function modelPickerHtml() {
     const groups = {};
@@ -280,6 +280,22 @@
       `Worst-case cost before running: <b>${esc(fmtUsd(e.usd))}</b> (every model uses its full output limit). Most runs cost less.`;
     return `<div class="cmp-gate" id="cmpGate"><p>${est}</p>${g.reasons.length ? `<ul>${g.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</div>`;
   }
+  // Answers differ a lot in length and number of sources, so they are not laid side by side:
+  // one table compares the numbers, and one model's full result is shown below it.
+  function viewerHtml(results) {
+    const list = results || [];
+    if (!list.length) return '';
+    const active = list.find(r => r.id === S.active) || list.find(r => r.status === 'ok') || list[0];
+    const rows = list.map(r => {
+      const on = r === active; const u = r.usage || {}; const c = r.cost || {}; const l = r.latency || {};
+      return `<tr class="${on ? 'is-active' : ''}"><th scope="row"><button type="button" data-cmp-tab="${attr(r.id)}" aria-pressed="${on}">${esc(r.label || r.model || r.id)}</button></th>
+        <td>${esc(STATUS_LABEL[r.status] || 'Unavailable')}</td><td>${esc(fmtMsv(l.total_ms))}</td><td>${esc(fmtInt(u.total_tokens))}</td><td>${esc(fmtUsd(c.usd))}</td>
+        <td>${Array.isArray(r.citations) ? r.citations.length : 0}</td></tr>`;
+    }).join('');
+    return `<div class="cmp-table-wrap"><table class="cmp-table"><thead><tr><th scope="col">Model</th><th scope="col">Status</th><th scope="col">Time</th><th scope="col">Tokens</th><th scope="col">Est. cost</th><th scope="col">Sources cited</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="cmp-muted">Click a model to read its full answer.</p>
+      <div class="cmp-viewer">${resultCardHtml(active)}</div>`;
+  }
   function resultsHtml() {
     if (S.mode === 'ask' && S.ask) {
       const a = S.ask;
@@ -291,7 +307,7 @@
     if (!S.run) return '';
     const r = S.run;
     return `<section class="pg-turn-output"><div class="pg-turn-label">Results · ${esc(r.created_at || '')}</div>
-      <div class="pg-output-grid cmp-grid">${(r.results || []).map(resultCardHtml).join('')}</div>
+      ${viewerHtml(r.results)}
       ${summaryHtml(r.summary)}${evaluationHtml(r.evaluation, S.evals)}${sourcesHtml(r.sources)}
       ${(r.warnings || []).map(w => `<div class="pg-warning" role="status">${esc(w)}</div>`).join('')}
       <p class="cmp-muted">Actual estimated cost of this run: ${esc(fmtUsd(r.budget && r.budget.actual_cost_usd))}${r.budget && r.budget.cost_complete === false ? ' (some costs unknown)' : ''}.</p></section>`;
@@ -300,7 +316,7 @@
     const g = gateRun(S);
     const hist = S.runs.map(r => `<div class="pg-history-row"><button class="pg-history-item" data-cmp-open="${attr(r.run_id)}"><b>${esc(r.prompt)}</b><small>${fmtInt(r.model_count)} models · ${esc(r.created_at ? new Date(r.created_at).toLocaleDateString() : '')}</small></button><button class="pg-history-delete" aria-label="Delete this run" data-cmp-del="${attr(r.run_id)}">×</button></div>`).join('');
     return `<div class="pg-page cmp-page">
-      <div class="pg-page-heading"><div><div class="eyebrow">Compare providers</div><h1>Compare</h1><p>Ask OpenAI, Anthropic, Google and xAI the same question and see what was measured: answer, sources, grounding, cost and speed.</p></div></div>
+      <div class="pg-page-heading"><div><div class="eyebrow">Test models</div><h1>AI Playground</h1><p>Ask several models the same question and compare their answers, with sources, tokens, estimated cost and speed.</p></div></div>
       ${S.stale ? '<div class="pg-warning" role="status">Catalog prices were last verified ' + esc(S.verifiedOn || 'a while ago') + ' and may be out of date.</div>' : ''}
       ${S.error ? `<div class="pg-warning" role="alert">${esc(S.error)}</div>` : ''}
       ${glossaryHtml()}
@@ -309,7 +325,7 @@
         <section class="pg-workspace card cmp-work">
           <form id="cmpForm" class="cmp-form" novalidate>
             <div class="cmp-mode" role="radiogroup" aria-label="Mode">
-              <label><input type="radio" name="cmpMode" value="compare" ${S.mode === 'compare' ? 'checked' : ''}> Compare side by side</label>
+              <label><input type="radio" name="cmpMode" value="compare" ${S.mode === 'compare' ? 'checked' : ''}> Ask all selected models</label>
               <label><input type="radio" name="cmpMode" value="ask" ${S.mode === 'ask' ? 'checked' : ''}> Ask with fallback</label>
             </div>
             <p class="cmp-muted">${S.mode === 'ask' ? 'Tries your chosen models in the order selected (up to 3). If one fails for a provider reason, the next is used and the switch is shown.' : 'Sends the same question to each chosen model (1–' + esc((S.limits.max_models || 4)) + '). Nothing is substituted if a model fails.'}</p>
@@ -317,10 +333,8 @@
             ${S.loaded ? modelPickerHtml() : '<p class="cmp-muted">Loading models…</p>'}
             <fieldset class="cmp-evid"><legend class="pg-kicker">Evidence</legend>
               <label><input type="radio" name="cmpEvid" value="none" ${S.evidence === 'none' ? 'checked' : ''}> No evidence (the model answers from its own knowledge)</label>
-              <label><input type="radio" name="cmpEvid" value="atlas" ${S.evidence === 'atlas' ? 'checked' : ''}> Atlas evidence (same passages for every model)</label>
-              <div class="cmp-sub" ${S.evidence === 'atlas' ? '' : 'hidden'}><label><input type="checkbox" id="cmpDocs" ${S.docs ? 'checked' : ''}> My research library</label><label><input type="checkbox" id="cmpWeb" ${S.web ? 'checked' : ''}> Web search (Tavily)</label></div>
-              <label><input type="radio" name="cmpEvid" value="provider_search" ${S.evidence === 'provider_search' ? 'checked' : ''}> Each provider's own web search</label>
-              <p class="cmp-muted">${S.evidence === 'provider_search' ? 'Each provider searches on its own, so each model sees different material. Differences may come from the search, not the model, so answers are not directly comparable.' : S.evidence === 'atlas' ? 'Every model receives identical passages, so differences reflect the models. Passages are wrapped as untrusted text.' : 'Without evidence, citations and grounding cannot be checked.'}</p>
+              <label><input type="radio" name="cmpEvid" value="atlas" ${S.evidence === 'atlas' ? 'checked' : ''}> Web sources (Atlas searches once and gives every model the same passages)</label>
+              <p class="cmp-muted">${S.evidence === 'atlas' ? 'Every model receives identical passages, so differences reflect the models. Passages are wrapped as untrusted text.' : 'Without evidence, citations and grounding cannot be checked.'}</p>
             </fieldset>
             <label class="cmp-line"><input type="checkbox" id="cmpStruct" ${S.structured ? 'checked' : ''}> Ask for structured claims (answer plus each claim's sources)</label>
             <label class="cmp-line" for="cmpMaxOut">Output limit (tokens) <input class="input cmp-num" id="cmpMaxOut" type="number" min="16" step="1" inputmode="numeric" placeholder="${attr(S.limits.default_max_output_tokens || '')}" value="${attr(S.maxOut)}"></label>
@@ -329,7 +343,7 @@
             <div class="cmp-consent"><label><input type="checkbox" id="cmpConsent" ${S.consent ? 'checked' : ''}> I understand my question${S.evidence === 'atlas' && S.docs ? ', excerpts of my research library' : ''} and any evidence will be sent to the selected third-party providers.</label>
               ${(S.disclosures || []).map(d => `<p class="cmp-muted">${esc(d)}</p>`).join('')}</div>
             ${gateHtml(g)}
-            <div class="cmp-actions"><button class="btn btn-primary" type="submit" id="cmpRun" ${g.ok && !S.busy ? '' : 'disabled'}>${S.busy ? 'Running…' : (S.mode === 'ask' ? 'Ask' : 'Run comparison')}</button></div>
+            <div class="cmp-actions"><button class="btn btn-primary" type="submit" id="cmpRun" ${g.ok && !S.busy ? '' : 'disabled'}>${S.busy ? 'Running…' : (S.mode === 'ask' ? 'Ask' : 'Run')}</button></div>
           </form>
           <div class="cmp-status" id="cmpStatus" role="status" aria-live="polite">${S.busy ? 'Waiting for providers. Slow models can take up to a minute.' : ''}</div>
           <div class="cmp-results" id="cmpResults">${S.busy ? '<div class="pg-output pg-pending"><header><strong>Running…</strong><span class="pg-spinner"></span></header></div>' : resultsHtml()}</div>
@@ -339,7 +353,7 @@
 
   let mainEl = null;
   function refresh() {
-    if (!mainEl || (window.Atlas && Atlas.state && Atlas.state.view !== 'compare')) return;
+    if (!mainEl || (window.Atlas && Atlas.state && Atlas.state.view !== 'playground')) return;
     const keep = { p: document.activeElement && document.activeElement.id };
     mainEl.innerHTML = html(); bind();
     if (keep.p) { const n = document.getElementById(keep.p); if (n && typeof n.focus === 'function') { n.focus(); } }
@@ -362,6 +376,10 @@
     const p = document.getElementById('cmpPrompt'); if (p) { p.addEventListener('input', () => { S.prompt = p.value; updateGate(); }); p.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('cmpForm').requestSubmit(); } }); }
     const m = document.getElementById('cmpMaxOut'); if (m) m.addEventListener('input', () => { S.maxOut = m.value; updateGate(); });
     const f = document.getElementById('cmpForm'); if (f) f.addEventListener('submit', submit);
+    document.querySelectorAll('[data-cmp-tab]').forEach(b => b.addEventListener('click', () => {
+      S.active = b.dataset.cmpTab; refresh();
+      document.querySelector('.cmp-viewer')?.scrollIntoView({ block: 'nearest' });
+    }));
     document.querySelectorAll('[data-cmp-open]').forEach(b => b.addEventListener('click', () => openRun(b.dataset.cmpOpen)));
     document.querySelectorAll('[data-cmp-del]').forEach(b => b.addEventListener('click', () => delRun(b.dataset.cmpDel)));
   }
@@ -378,7 +396,7 @@
     const g = gateRun(S);
     if (!g.ok) { S.error = g.reasons[0]; refresh(); return; }
     S.key = newIdempotencyKey(); // one key per submit; a repeat of the same request body is the server's to dedupe
-    const body = buildBody(); S.busy = true; S.error = null; S.run = null; S.ask = null; refresh();
+    const body = buildBody(); S.busy = true; S.error = null; S.run = null; S.ask = null; S.active = null; refresh();
     try {
       const res = await apiPost(S.mode === 'ask' ? '/compare/ask' : '/compare/run', body);
       const d = res && res.data; if (!d) throw new Error('Compare returned an empty response.');
@@ -404,7 +422,7 @@
       const d = (m && m.data) || {};
       S.models = d.models || []; S.providers = d.providers || []; S.limits = d.limits || {}; S.disclosures = d.disclosures || [];
       S.stale = !!d.catalog_stale; S.verifiedOn = d.catalog_verified_on || null; S.evals = (e && e.data) || null;
-      if (!S.selected.length) S.selected = S.models.filter(x => x.default && x.configured && x.available !== false).map(x => x.id).slice(0, S.limits.max_models || 4);
+      if (!S.selected.length) S.selected = S.models.filter(x => x.configured && x.available !== false).map(x => x.id).slice(0, S.limits.max_models || 4);
       S.loaded = true; S.error = null;
     } catch (err) { S.error = (err && err.message) || 'Compare could not load.'; S.loaded = true; }
     refresh(); loadRuns();
@@ -415,7 +433,7 @@
     // pure helpers (also used by tests)
     formatUsd: fmtUsd, formatInt: fmtInt, formatMs: fmtMsv, formatRate: fmtRate,
     safeUrl, safeMarkdown, newIdempotencyKey, estimateRunCost, gateRun, explainError,
-    resultCardHtml, summaryHtml, evaluationHtml, sourcesHtml, citationsHtml, groundingHtml, glossaryHtml, GLOSSARY,
+    openRun, resultCardHtml, viewerHtml, summaryHtml, evaluationHtml, sourcesHtml, citationsHtml, groundingHtml, glossaryHtml, GLOSSARY,
     _state: S,
   };
 })();

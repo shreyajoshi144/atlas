@@ -73,8 +73,8 @@ class PricingTests(unittest.TestCase):
 
 class CatalogTests(unittest.TestCase):
     def test_shipped_catalog_valid(self):
-        self.assertEqual({m.provider for m in C.all()}, {"openai", "anthropic", "gemini", "xai"})
-        for p in ("openai", "anthropic", "gemini", "xai"):
+        self.assertEqual({m.provider for m in C.all()}, {"groq", "openai", "anthropic", "gemini", "xai"})
+        for p in ("groq", "openai", "anthropic", "gemini", "xai"):
             self.assertEqual(sum(1 for m in C.for_provider(p) if m.default), 1, p)
         for m in C.all():
             self.assertTrue(m.source_url.startswith("https://"))

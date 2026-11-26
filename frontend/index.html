@@ -37,7 +37,7 @@
     <aside class="dash-side">
       <div class="side-brand"><span class="side-mark"></span>Atlas</div>
       <ul>
-        <li class="on">Overview</li><li>Research</li><li>AI Playground</li><li>Compare</li><li>AtlasBench</li>
+        <li class="on">Overview</li><li>Research</li><li>AI Playground</li><li>AtlasBench</li>
       </ul>
       <div class="side-foot"><span class="avatar">S</span><span>Sample user</span></div>
     </aside>
@@ -126,7 +126,7 @@
     <svg class="job-glyph" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 40 V26 M20 40 V14 M32 40 V22 M44 40 V8" transform="translate(-4 0)"/><path d="M6 42 H42"/></svg>
     <h3>Evaluate AI systems</h3>
     <p>Judge models on evidence, not impressions. Compare answers side by side, then score configurations against a frozen task.</p>
-    <ul class="sub-id" id="playground"><li><b>AI Playground.</b> Put one question to up to three models, with the same retrieved evidence beside each answer, plus tokens and estimated cost.</li></ul>
+    <ul class="sub-id" id="playground"><li><b>AI Playground.</b> Put one question to up to four models (Groq and Google Gemini in the demo), give them the same web sources, and compare answers, citations, cost and speed.</li></ul>
     <ul class="sub-id" id="atlasbench" style="margin-top:-6px"><li><b>AtlasBench.</b> Six metrics, from claim correctness to contradiction handling, on frozen tasks so runs can be compared and reproduced.</li></ul>
     <a class="btn btn-ghost" href="auth.html?mode=signup&amp;next=%23%2Fplayground">Try the Playground</a></div>
     <figure class="sheet" style="margin:0"><div class="cols3"><div class="col-m"><b>Model A</b><div class="ln f"></div><div class="ln m"></div><div class="ln s"></div><div class="meta">sources · tokens · cost</div></div><div class="col-m"><b>Model B</b><div class="ln f"></div><div class="ln s"></div><div class="ln m"></div><div class="meta">sources · tokens · cost</div></div><div class="col-m"><b>Model C</b><div class="ln m"></div><div class="ln f"></div><div class="ln s"></div><div class="meta">sources · tokens · cost</div></div></div>
@@ -142,7 +142,7 @@
     <figure class="sheet" style="margin:0"><div class="flow"><div class="node"><span>Request</span><small>from any area</small></div><div class="node pol"><span>Routing policy</span><small>saved per account</small></div><div class="node"><span>Model call</span><small>requested → actual</small></div><div class="node fb"><span>Fallback</span><small>only if turned on</small></div><div class="node"><span>Usage ledger</span><small>calls · tokens · est. cost</small></div></div><figcaption class="sheet-cap">Schematic. A decision can be previewed without calling a model.</figcaption></figure></article>
 
   <div class="also"><h3>Also in the workspace</h3><ul>
-    <li><b>Executive brief</b><span>An optional short summary above the full report.</span></li><li><b>Library and discovery</b><span>Cases found again by meaning, not just by keyword.</span></li>
+    <li><b>Executive brief</b><span>An optional short summary above the full report.</span></li><li><b>Cases and Library</b><span>Every report is saved to your account, so you can open it again later.</span></li>
     <li><b>Research gaps</b><span>Follow-up questions suggested per case, openable as new cases.</span></li><li><b>Case notes</b><span>Write notes against a case; they stay with it.</span></li>
     <li><b>Ask Atlas</b><span>Chat with your Library; answers draw on what you have researched.</span></li><li><b>Insights and export</b><span>Verification trends across cases, and Markdown export.</span></li></ul></div>
 </div></section>
@@ -175,9 +175,9 @@
   <div class="sec-head"><div class="kick">Engineering</div><h2 id="engH">Built to be checked, like the research it produces.</h2><p>Atlas is an open codebase, not a mockup. These figures are counted from the repository, and the limits are stated next to them.</p></div>
   <ul class="eng-stats" aria-label="Codebase at a glance">
     <li><b>24k</b><span>lines of application Python across 17 API route modules</span></li>
-    <li><b>891</b><span>test functions in 56 backend test files, plus 8 frontend test files</span></li>
+    <li><b>888</b><span>test functions in 56 backend test files, plus 7 frontend test files</span></li>
     <li><b>6</b><span>deterministic benchmark measures. No LLM judge anywhere in scoring</span></li>
-    <li><b>4</b><span>model providers behind one normalised, retry-aware client</span></li>
+    <li><b>5</b><span>supported model providers behind one normalised, retry-aware client</span></li>
   </ul>
   <ul class="trust">
     <li><b>Evidence before opinion</b><span>Models are ranked only on frozen tasks over fictional evidence, so no one can answer from memory. Two models are separated only when their 95% intervals do not overlap.</span></li>

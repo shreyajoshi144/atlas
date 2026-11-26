@@ -105,7 +105,7 @@
   }
   function runRow(run, selected) {
     const comp = run.summary && run.summary.composite ? run.summary.composite.mean : null;
-    const checkable = run.status === 'completed';
+    const checkable = false; // side-by-side run comparison is not offered in the UI (the API remains)
     return `<div class="km-row ab-run" data-act="run-open" data-id="${esc(run.run_id)}" tabindex="0" role="button">
       <div class="km-row-title">${esc(run.label || run.config_name)}</div>
       <div class="km-row-sub">${runStatusBadge(run.status)} ${isNum(comp) ? `<span class="ab-num">${score(comp)}</span>` : ''}
@@ -294,7 +294,8 @@
         ${c.builtin ? '' : `<button class="btn btn-sm btn-danger" data-act="cfg-delete" data-id="${esc(c.config_id)}">Delete</button>`}</div></div>`;
   }
   function configFormHtml(ov) {
-    const models = ((ov && ov.models) || []).map(m => `<option value="${esc(m.model)}">${esc(m.label)}${m.price_in === null ? '' : ` — $${esc(m.price_in)}/$${esc(m.price_out)} per 1M tokens`}</option>`).join('');
+    // Groq retired the Llama IDs, so they are not offered for new configurations.
+    const models = ((ov && ov.models) || []).filter(m => !/^llama-/.test(m.model)).map(m => `<option value="${esc(m.model)}">${esc(m.label)}${m.price_in === null ? '' : ` — $${esc(m.price_in)}/$${esc(m.price_out)} per 1M tokens`}</option>`).join('');
     const strategies = ((ov && ov.strategies) || []).map(s => `<option value="${esc(s.strategy)}" title="${esc(s.description)}">${esc(s.label)}</option>`).join('');
     return `<div class="card km-detail"><div class="km-claim-text">New configuration</div>
       <div class="km-toolbar"><div class="km-sel"><label class="field-label" for="abCfgName">Name</label><input class="input" id="abCfgName" maxlength="80" placeholder="e.g. Llama 8B, iterative"></div>
@@ -327,7 +328,7 @@
   const root = () => document.getElementById('abRoot');
 
   function tabsHtml() {
-    const tabs = [['runs', 'Runs'], ['compare', 'Compare'], ['tasks', 'Tasks'], ['configs', 'Configurations'], ['routing', 'Routing & cost']];
+    const tabs = [['runs', 'Runs'], ['tasks', 'Tasks'], ['configs', 'Configurations'], ['routing', 'Routing & cost']];
     return `<div class="km-tabs" role="tablist">${tabs.map(([k, l]) => `<button class="km-tab${AB.tab === k ? ' active' : ''}" role="tab" aria-selected="${AB.tab === k}" data-act="tab" data-tab="${k}">${esc(l)}${k === 'compare' && AB.picked.length ? ` (${AB.picked.length})` : ''}</button>`).join('')}</div>`;
   }
   function intro() {
@@ -337,7 +338,8 @@
     const how = `<details class="cmp-det cmp-how" open><summary>How AtlasBench works</summary><dl class="cmp-gloss">
       <div><dt>What it is</dt><dd>A fixed exam for AI models. Each task is a question plus a few made-up documents, with a known correct answer. Nothing is fetched from the web, so differences come from the model, not the internet.</dd></div>
       <div><dt>How a run is scored</dt><dd>Atlas gives every task to a model setup and scores the answers with fixed rules, never another AI. Six measures: right verdict, real citations, quotes that exist in the source, use of the needed sources, conflicts flagged, and sensible tool use.</dd></div>
-      <div><dt>How to use it</dt><dd>1) Configurations: add a model setup. 2) Runs: start a new run. 3) Read the scores. 4) Compare: put two runs side by side. 5) Routing &amp; cost: pick the cheapest model whose scores are good enough, and set spend limits.</dd></div>
+      <div><dt>Try it</dt><dd>1) On Runs, keep the Baseline configuration and the built-in suite (8 test questions). 2) Press Create run. 3) Open the new run, press Run now and wait. 4) Read the scores.</dd></div>
+      <div><dt>The other tabs</dt><dd>Tasks: the test questions, and a place to write your own. Configurations: make your own model setup. Routing &amp; cost: choose which model Research uses and set spend limits.</dd></div>
       <div><dt>What the scores mean</dt><dd>1.0 is a perfect answer. A task that crashes counts as zero, so a setup cannot look better by failing quietly.</dd></div></dl></details>`;
     return how + `<div class="small muted">Every task is a question plus a fixed set of documents — nothing is fetched from the web during a run, so any difference between two runs comes from the model or settings, not from the internet. Scoring is rule-based; no AI judges another AI. Costs are estimates.</div>
       ${s ? `<div class="small muted" style="margin-top:4px;">${esc(s.title)}: ${esc(s.task_count)} tasks · suite hash ${esc(shortHash(s.suite_hash))}</div>` : ''}`;
@@ -355,7 +357,8 @@
     return `<div class="card km-detail"><div class="km-claim-text">New run</div>
       <div class="km-toolbar"><div class="km-sel"><label class="field-label" for="abRunCfg">Configuration</label><select class="input" id="abRunCfg">${cfgOpts}</select></div>
         <div class="km-sel"><label class="field-label" for="abRunLabel">Label (optional)</label><input class="input" id="abRunLabel" maxlength="120" placeholder="e.g. before prompt change"></div></div>
-      <div class="field-label">Tasks</div>
+      <div class="small muted" style="margin-bottom:10px;">A configuration is a model plus a method. <b>Baseline</b>: reads the best evidence once. <b>Iterative gap-fill</b>: reads, then looks again for what is missing. <b>Full corpus</b>: gets every document, so only the model is tested. <b>Small model</b>: Baseline with the cheaper 20B model. First time? Keep Baseline.</div>
+      <div class="field-label">Tasks (the test questions)</div>
       <label class="km-check"><input type="radio" name="abScope" value="suite" checked> ${esc(ov && ov.suites[0] ? ov.suites[0].title : 'Built-in suite')} (${esc(ov && ov.suites[0] ? ov.suites[0].task_count : 8)} tasks)</label>
       <label class="km-check"><input type="radio" name="abScope" value="custom"${custom.length ? '' : ' disabled'}> Only my own tasks${custom.length ? '' : ' (none yet — add one in Tasks)'}</label>
       ${custom.length ? `<div class="ab-checks">${taskChecks}</div>` : ''}

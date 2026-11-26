@@ -16,7 +16,7 @@ from .settings import PROVIDERS
 
 STALE_AFTER_DAYS = 60
 _DEFAULT_PATH = Path(__file__).with_name("catalog.json")
-_STRUCTURED_NATIVE = {"openai": True, "xai": True, "gemini": False, "anthropic": False}
+_STRUCTURED_NATIVE = {"groq": False, "openai": True, "xai": True, "gemini": False, "anthropic": False}
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,7 @@ class ModelEntry:
 
     @property
     def native_search_supported(self) -> bool:
-        return True
+        return self.provider != "groq"
 
 
 class CatalogError(ValueError):

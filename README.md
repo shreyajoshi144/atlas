@@ -2,7 +2,7 @@
 
 **Research you can trace. AI you can measure.**
 
-Atlas is a research workspace that keeps the process alongside the result. You ask a question and Atlas finds and ranks sources, builds an evidence set, checks claims against it, and writes a structured report. Every claim stays linked to the source it came from. Atlas also gives you tools to test the models behind that research: side-by-side comparison across four providers, a reproducible benchmark, and cost-aware model routing. It ranks models only on measured results, never on opinion.
+Atlas is a research workspace that keeps the process alongside the result. You ask a question and Atlas finds and ranks sources, builds an evidence set, checks claims against it, and writes a structured report. Every claim stays linked to the source it came from. Atlas also gives you tools to test the models behind that research: side-by-side model comparison in the AI Playground (five providers are supported; the demo shows Groq and Google Gemini), a reproducible benchmark, and cost-aware model routing. It ranks models only on measured results, never on opinion.
 
 ```
 Question → Sources → Evidence → Verification → Report → Knowledge
@@ -48,8 +48,7 @@ Built with FastAPI, LangGraph, SQLite, ChromaDB and a dependency-free static fro
 
 | Feature | What it does |
 | --- | --- |
-| **Compare** | Sends one question to OpenAI, Anthropic, Google Gemini and xAI Grok models. Each answer shows its citations, token usage, estimated cost, latency, retries and failures. |
-| **Playground** | Compares up to three allowlisted Groq models side by side over your research library, with optional Tavily web search. |
+| **AI Playground** | Sends one question to up to four models, optionally with the same web sources for each. A table compares time, tokens, estimated cost and sources cited; click a model to read its full answer. Providers supported in code: Groq, OpenAI, Anthropic, Google Gemini and xAI. The demo offers two free-tier models each from Groq and Gemini (`ATLAS_VISIBLE_MODELS`). |
 | **AtlasBench** | Reproducible benchmark runs on frozen tasks and gold evidence. Arbitration compares only completed outputs scored against the same task. There is no LLM judge. |
 | **Routing and Cost Autopilot** | Policy-based model selection with production fallback chains, managed on the **Routing & cost** tab inside AtlasBench. It sits behind `core.llm`, so agent code doesn't change. |
 | **Budgets** | Per-user daily call limits and a monthly spend cap. Unknown model pricing is blocked when a cap is set. |
@@ -100,7 +99,7 @@ flowchart LR
         AUTH[Auth]
         RES[Research graph]
         RET[Retrieval · Knowledge · Challenges]
-        EVAL[Compare · Playground · AtlasBench]
+        EVAL[AI Playground · AtlasBench]
         ROUTE[Routing · Budgets · Ops]
     end
 
@@ -166,7 +165,7 @@ All settings are read from `.env`. `.env.example` lists every option, and `backe
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `GROQ_API_KEY` | Yes | Default LLM provider for the research pipeline and Playground |
+| `GROQ_API_KEY` | Yes | LLM provider for the research pipeline, and Groq models in the AI Playground |
 | `TAVILY_API_KEY` | Yes | Web search |
 | `SECRET_KEY` | Yes | Token signing secret, at least 32 random characters |
 | `APP_ENV` | No | `development` (default), `staging` or `production` |
@@ -174,7 +173,7 @@ All settings are read from `.env`. `.env.example` lists every option, and `backe
 | `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` | Production | Monthly budget per user. Startup fails in production without it |
 | `GLOBAL_MONTHLY_LLM_SPEND_CAP_USD` | Recommended for public deployments | App-wide monthly ceiling across **all** accounts. Per-user caps multiply with every sign-up; this bounds total spend on your keys |
 | `DEFAULT_DAILY_LLM_CALL_LIMIT` | No | Daily LLM calls per user (default `1000`) |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `XAI_API_KEY` | No | Turns on that provider in Compare. Providers without a key show as not configured |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `XAI_API_KEY` | No | Turns on that provider in the AI Playground. Providers without a key show as not configured |
 | `ATLAS_DATA_DIR` | No | Base directory for the SQLite and Chroma data (default `./data`) |
 | `SQLITE_PATH` / `CHROMA_PATH` | No | Override the individual store locations |
 | `FRONTEND_BASE_URL` | No | Public frontend URL (default `http://localhost:7860`) |
@@ -191,7 +190,7 @@ To run the frontend and API on different origins, set `window.ATLAS_API_BASE` in
 
 ## Comparing and evaluating models
 
-**Compare** (`/api/compare`) calls the real provider APIs. Model IDs and list prices are stored in `backend/providers/catalog.json`, and each entry has a source URL and the date it was verified. The UI warns when the catalog is more than 60 days old. Admins can call `POST /api/compare/admin/discover` to check the catalog against the models their keys can actually use. Costs are estimates, not invoices.
+The **AI Playground** (served by `/api/compare`) calls the real provider APIs. Model IDs and list prices are stored in `backend/providers/catalog.json`, and each entry has a source URL and the date it was verified. The UI warns when the catalog is more than 60 days old. Admins can call `POST /api/compare/admin/discover` to check the catalog against the models their keys can actually use. Costs are estimates, not invoices.
 
 **Evaluation** is the only basis Atlas uses to say one model is better than another:
 
@@ -203,7 +202,7 @@ python -m backend.providers.eval_cli --models openai:gpt-6.1-sol,anthropic:claud
 python -m backend.providers.eval_cli --models openai:gpt-6.1-sol,anthropic:claude-sonnet-5-5 --max-usd 2
 ```
 
-The Compare page shows the results with confidence intervals. It reports a ranking only when those intervals don't overlap. No results ship pre-computed.
+The AI Playground shows evaluation results with confidence intervals. It reports a ranking only when those intervals don't overlap. No results ship pre-computed.
 
 ---
 

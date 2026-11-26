@@ -36,19 +36,3 @@ def test_knowledge_rows_support_keyboard_activation():
     js = (ROOT / "frontend/js/knowledge.js").read_text()
     assert "root().addEventListener('keydown', onKeyboardActivate)" in js
     assert "function onKeyboardActivate(ev)" in js
-
-
-def test_playground_partial_success_output_renderer_under_node():
-    node = shutil.which("node")
-    if not node:
-        return
-    path = str(ROOT / "frontend/js/playground.js").replace("\\", "\\\\").replace("'", "\\'")
-    script = f"""global.window = {{}}; global.escapeHtml = s => String(s); global.mdToHtml = s => String(s);
-require('{path}'); const P = window.AtlasPlayground;
-const html = P.outputHtml({{model:'model-a',label:'Model A',status:'ok',answer:'Real answer',usage:{{}}}}) +
- P.outputHtml({{model:'model-b',label:'Model B',status:'failed',error:'Provider unavailable',usage:{{}}}});
-if (!html.includes('Real answer') || !html.includes('Provider failed') || !html.includes('Provider unavailable') || !html.includes('Complete')) process.exit(1);
-console.log('partial-success renderer passed');"""
-    done = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=20)
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert "passed" in done.stdout

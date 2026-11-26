@@ -132,6 +132,6 @@ test('idempotency keys are unique, well-formed and not guessable from time alone
 test('glossary covers required concepts', () => {
   const t = C.GLOSSARY.map(g => g[0].toLowerCase()).join('|');
   for (const w of ['token', 'latency', 'invoice', 'grounding', 'citation', 'reliability', 'structured', 'anecdote', 'evidence modes']) assert(t.includes(w), w);
-  assert(C.glossaryHtml().includes('How to read this page'));
+  assert(C.glossaryHtml().includes('How the AI Playground works'));
 });
 console.log(`compare_ui.test.js: ${passed} tests passed`);

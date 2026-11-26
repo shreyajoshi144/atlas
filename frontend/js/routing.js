@@ -122,7 +122,7 @@
       <button class="btn btn-sm" data-act="rt-deactivate" style="margin-left:8px;">Use application default</button>`);
   }
   function policyFormHtml(ov) {
-    const models = ((ov && ov.models) || []);
+    const models = ((ov && ov.models) || []).filter(m => !/^llama-/.test(m.model));   // retired by Groq
     const opts = models.map(m => `<option value="${esc(m.model)}">${esc(m.label)}${m.price_in === null ? ' (no price)' : ''}</option>`).join('');
     const checks = models.map(m => `<label class="km-check"><input type="checkbox" class="rtFb" value="${esc(m.model)}"> ${esc(m.label)}</label>`).join('');
     const sizes = PROMPT_SIZES.map(([n, l]) => `<option value="${n}"${n === 4000 ? ' selected' : ''}>${esc(l)}</option>`).join('');

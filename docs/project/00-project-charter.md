@@ -30,15 +30,14 @@ Atlas addresses both. It produces research reports in which **every claim stays 
 
 ## 3. Scope
 
-**In scope (five workspace areas)**
+**In scope (four workspace areas)**
 
 | Area | Purpose |
 |---|---|
 | Overview | Entry point with the user's recent activity |
-| Research | New case, Cases, Library, Discover, Knowledge map, Insights, Challenge mode, grounded chat, notes |
-| AI Playground | Ask up to three models one question and compare answers, usage and cost |
-| Compare | Same question and evidence to up to four providers, with grounding, cost and latency |
-| AtlasBench | Frozen-task model scoring, run comparison, arbitration, and the Routing & cost tab (Cost Autopilot, budgets) |
+| Research | New case, Cases, Library, Knowledge map, Insights, Challenge mode, grounded chat, notes |
+| AI Playground | One question to up to four models, optionally with the same sources; compare time, tokens, cost and citations, and read each answer in full |
+| AtlasBench | Frozen-task model scoring and the Routing & cost tab (Cost Autopilot, budgets). Run comparison and arbitration are available through the API |
 
 Supporting: accounts and authentication, admin controls and monitoring, a single-container deployment, and CI.
 
@@ -51,6 +50,7 @@ Supporting: accounts and authentication, admin controls and monitoring, a single
 | Email delivery (password reset) | No email provider |
 | Token revocation | Hand-rolled signed tokens; revocation is a later step |
 | Voice, mobile app, real-time collaboration | Not needed for the objectives |
+| Discover (search-by-meaning page) | Built, then removed after 2.1.1 (decision D-19): it did not work on the demo and overlapped Cases and Library |
 | **Workflow Studio** | Built, then **removed** in 2.1.1 (decision D-12) because it did not support the objectives and was hard to explain |
 
 ## 4. Deliverables
@@ -109,7 +109,7 @@ flowchart LR
 | Assumption | Providers keep their API shapes; model IDs and prices change often (verified against the catalog date) |
 | Assumption | A single instance is enough for a demo and a small team |
 | Constraint | No budget for paid hosting; the demo runs on free tiers (512 MB memory, ephemeral disk) |
-| Constraint | No provider keys other than Groq and Tavily on the demo, so Compare cannot run live there |
+| Constraint | Only free-tier keys (Groq, Gemini, Tavily), so OpenAI, Anthropic and xAI are supported in code but not offered on the demo |
 | Constraint | One person, so scope has to stay small enough to test fully |
 | Dependency | Groq (language model), Tavily (search), GitHub (source and CI), Render (hosting) |
 

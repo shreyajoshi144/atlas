@@ -185,11 +185,13 @@ def test_playground_frontend_is_integrated_and_escapes_dynamic_content():
 
     root = Path(__file__).resolve().parents[2]
     html = (root / "frontend/app.html").read_text()
-    js = (root / "frontend/js/playground.js").read_text()
+    js = (root / "frontend/js/compare.js").read_text()
     css = (root / "frontend/css/atlas.css").read_text()
-    assert 'data-nav="playground"' in html and 'src="js/playground.js"' in html
-    for label in ("AI Playground", "Select up to 3", "My research library", "Web search", "Evidence provided"):
+    # The AI Playground page is served by compare.js; the earlier separate Compare entry is gone.
+    assert 'data-nav="playground"' in html and 'src="js/compare.js"' in html
+    assert 'data-nav="compare"' not in html and 'js/playground.js' not in html
+    for label in ("AI Playground", "Web sources", "Click a model to read its full answer"):
         assert label in js
-    assert "escapeHtml" in js and "escapeAttr" in js and "localStorage" not in js
-    assert "/playground/chat" in js and "/playground/conversations" in js
+    assert "safeMarkdown" in js and "localStorage" not in js
+    assert "/compare/run" in js and "/compare/models" in js
     assert ".pg-layout" in css and "@media (max-width: 620px)" in css

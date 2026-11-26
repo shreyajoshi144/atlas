@@ -105,6 +105,7 @@ A provider is enabled when its key is set to a real value (placeholders such as 
 
 | Variable | Default | Notes |
 |---|---|---|
+| `ATLAS_VISIBLE_MODELS` | unset (whole catalog) | Comma-separated catalog ids the AI Playground offers. The Docker image lists two Groq and two Gemini free-tier models. |
 | `ATLAS_LIGHT_MODE` | unset | `1` skips the executive brief and vector indexing on research runs. Reports are still saved. The Docker image sets `1`; see [Small-host mode](07-deployment.md#small-host-mode-512-mb). |
 | `ENABLE_API_DOCS` | `false` in production | `true` serves `/docs`, `/redoc` and `/openapi.json` in production. They are always on in development. |
 

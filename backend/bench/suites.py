@@ -16,7 +16,8 @@ from backend.bench.models import AgentConfig, TaskDefinition, suite_hash
 
 _SUITE_DIR = Path(__file__).with_name("suites")
 BUILTIN_SUITE_FILES = {"core-v1": "core_v1.json"}
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# Groq retired the Llama IDs on 2026-08-16, so presets use the supported gpt-oss models.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 
 @dataclass(frozen=True)
@@ -78,5 +79,5 @@ PRESETS: dict[str, AgentConfig] = {
     "preset-baseline": AgentConfig(name="Baseline · single pass", model=DEFAULT_MODEL, strategy="single_pass"),
     "preset-iterative": AgentConfig(name="Iterative gap-fill", model=DEFAULT_MODEL, strategy="iterative", max_rounds=2),
     "preset-full-corpus": AgentConfig(name="Full corpus (no retrieval)", model=DEFAULT_MODEL, strategy="full_corpus"),
-    "preset-small-model": AgentConfig(name="Small model · single pass", model="llama-3.1-8b-instant", strategy="single_pass"),
+    "preset-small-model": AgentConfig(name="Small model · single pass", model="openai/gpt-oss-20b", strategy="single_pass"),
 }

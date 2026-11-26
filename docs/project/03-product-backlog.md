@@ -13,7 +13,7 @@ Prioritised with MoSCoW (Must, Should, Could, Won't now). Delivered work is reco
 |---|---|---|---|---|---|---|
 | B-01 | Confirm sign-up, sign-in and one research run on the live site after the 2026-11-25 fixes | The public link is the product's first impression; the fixes were verified locally only | Must | S | **Open** | R-01, I-01, I-02 |
 | B-02 | Run the grounding suite and AtlasBench on at least two live providers and publish pass rates with confidence intervals | Turns "built" into "measured"; today there are no model results | Must | M | Not started (needs API credit) | R-05 |
-| B-03 | Add Groq as a Compare provider so Compare runs on the demo | Compare currently needs keys the demo does not have | Should | M | Proposed (decision pending) | I-04 |
+| B-03 | Add `GEMINI_API_KEY` to the hosted demo so the Gemini models are available there | The page offers them but they need the key on the host | Must | S | Open | I-04 |
 | B-04 | Re-run the browser end-to-end suites after the menu change | They last ran on 2026-11-23, before the change | Should | S | Open (Playwright not installed on 2026-11-25) | [QA gaps](05-qa-report.md#6-what-was-not-checked) |
 | B-05 | Persistent storage for the hosted demo | Accounts and reports are lost at each restart | Should | S | Not started (paid disk) | R-02 |
 | B-06 | Run research as a background job with polling | A hosted proxy can cut a request at about 100 s; the free CPU is slow | Should | L | Not started | R-03 |
@@ -34,6 +34,7 @@ Size: S under a day, M a few days, L a week or more (estimates, not tracked effo
 |---|---|---|
 | Workflow Studio (user-defined deterministic workflows) | Removed in 2.1.1, decision [D-12](07-decision-log.md) | Did not support any objective and was hard to explain |
 | Runtime & Control as a separate area | Folded into AtlasBench in 2.1.1, decision [D-13](07-decision-log.md) | Same backend as AtlasBench; one place is easier to understand |
+| Discover (search-by-meaning page) | Removed after 2.1.1, decision [D-19](07-decision-log.md) | Did not work on the demo; overlapped Cases and Library |
 | Pre-computed model rankings | Never shipped, decision [D-07](07-decision-log.md) | No ranking is shown without data that supports it |
 
 ## 3. Delivered scope (summary)

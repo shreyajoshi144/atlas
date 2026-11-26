@@ -21,7 +21,7 @@ For whoever deploys or supports Atlas for a team or customer. Everything here us
 | Probe | Meaning |
 |---|---|
 | `GET /ready` | `200` means config loaded and the database answered `SELECT 1`. `503` means the database is the problem. Used by the container `HEALTHCHECK`. |
-| `GET /health` | `ok`, or `degraded` when the local embedding model isn't loaded. Degraded means chat and discovery lose semantic context, but the API is up. |
+| `GET /health` | `ok`, or `degraded` when the local embedding model isn't loaded. Degraded means chat loses semantic context, but the API is up. |
 | `GET /api/admin/metrics` (admin) | Uptime, request totals, 4xx and 5xx counts, and p50 and p95 latency per route. A rising `error_rate_5xx` is the first signal. Per process, resets on restart. |
 | `GET /api/admin/monitoring?days=30` (admin) | Model usage, cost estimates, failures and fallbacks over a window |
 | `GET /api/admin/audit` (admin) | Immutable log of admin actions |
@@ -66,7 +66,7 @@ curl -X PUT "$HOST/api/admin/users/$USER_ID/limits" \
 | Users lose data after a restart, or sign-in says "invalid" for an account made earlier | Ephemeral disk: the host restarted (deploy, idle spin-down, or killed for memory) and the database was reset | Move `ATLAS_DATA_DIR` to a persistent volume. On a free host set `DEMO_EMAIL` and `DEMO_PASSWORD` so one login always exists, and keep the instance awake with an uptime monitor on `/ready`. |
 | The hosted app restarts during a research run (Render log shows `Instance ... restarted`) | Out of memory on a 512 MB instance | Keep small-host mode on (the Docker image sets it). Do not unset `ATLAS_LIGHT_MODE`, `ATLAS_DENSE_RANKING` or `ATLAS_MAX_TOP_K` on a 512 MB host. See [Small-host mode](07-deployment.md#small-host-mode-512-mb). |
 | First request after idle takes about a minute | Free instance was asleep | Wait, or keep it awake with an uptime monitor |
-| Ask Atlas and Discover find nothing for new reports on the hosted demo | `ATLAS_LIGHT_MODE=1` skips vector indexing | Expected on the small host. Unset it on a larger host. |
+| Ask Atlas answers only from a few recent reports on the hosted demo | `ATLAS_LIGHT_MODE=1` skips vector indexing, so chat reads the saved reports (the open case, or the three newest) instead of searching all of them | Expected on the small host. Unset it on a larger host. |
 | `/docs` returns 404 in production | API docs are off in production | Set `ENABLE_API_DOCS=true` if you want them |
 | Research run fails mid-way | Search or scrape failure, or the writer returned bad output | The writer gets one bounded recovery call. Otherwise the run reports a clear error. Check logs by request ID. |
 

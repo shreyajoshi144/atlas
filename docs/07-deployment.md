@@ -46,6 +46,7 @@ This is how the live demo is deployed. Render builds the repository's `Dockerfil
    |---|---|
    | `SECRET_KEY` | 32+ random characters (`python -c "import secrets;print(secrets.token_urlsafe(48))"`) |
    | `GROQ_API_KEY`, `TAVILY_API_KEY` | your keys (both are required to start) |
+   | `GEMINI_API_KEY` | optional; enables the two Gemini models in the AI Playground (Google AI Studio has a free tier) |
    | `APP_ENV` | `production` |
    | `CORS_ALLOWED_ORIGINS` | `https://<name>.onrender.com` |
    | `DEFAULT_MONTHLY_LLM_SPEND_CAP_USD` | for example `5` |
@@ -122,7 +123,7 @@ Render's free instance has 512 MB of memory and a fraction of a CPU. Before this
 | `ATLAS_MAX_TOP_K=6` | At most 6 sources per run, so the search pool is at most 12 results |
 | `ATLAS_LIGHT_MODE=1` | Skips the optional executive brief and vector indexing; the report is still saved to the database and appears in the Library |
 
-Measured locally: research runs completed in about 40 to 65 s, and peak memory was about 210 MB (measured with the ranking and source-cap settings, before light mode was added). Trade-offs: source ranking is less semantic, and because new reports are not indexed, **Ask Atlas and Discover do not find reports created on the small host**. On a larger host, unset these variables to get the full behaviour.
+Measured locally: research runs completed in about 40 to 65 s, and peak memory was about 210 MB (measured with the ranking and source-cap settings, before light mode was added). Trade-offs: source ranking is less semantic, and because new reports are not indexed, **Ask Atlas reads only the open case or the three newest saved reports on the small host**, not a search over all of them. On a larger host, unset these variables to get the full behaviour.
 
 ## Constraints to know about
 

@@ -8,10 +8,10 @@ The suites were last re-run on **2026-11-25**, after the final scope change (Wor
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest) | `python -m pytest -q` | **1,244 passed, 4 skipped, 0 failed** (2 to 4 minutes) |
+| Backend (pytest) | `python -m pytest -q` | **1,241 passed, 4 skipped, 0 failed** (about 2 minutes, 2026-11-26) |
 | Provider suite (stdlib `unittest`) | `python -m unittest discover -s backend/providers/tests -t .` | **121 tests, OK** (about 42 s) |
-| Browser end-to-end (Playwright, run as scripts) | `python frontend/tests/e2e/test_compare_e2e.py` and `test_frontend_e2e.py` | Last full run on 2026-11-23: Compare **42/42**, Frontend **113/113**. **Not re-run since the 2026-11-25 menu change**: the scripts were updated for the five-area menu, but Playwright was not installed in the environment used that day. |
-| Frontend unit tests (Node) | `node backend/tests/js/*.test.js` | **8 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Playground 12, Routing 14, link safety 4, API base 6, session persistence 5) |
+| Browser end-to-end (Playwright, run as scripts) | `python frontend/tests/e2e/test_compare_e2e.py` and `test_frontend_e2e.py` | Last full run on 2026-11-23: Compare **42/42**, Frontend **113/113**. **Not re-run since the menu changes of 2026-11-25 and 2026-11-26**: Playwright was not installed in the environment used, and the scripts still describe the earlier menu. |
+| Frontend unit tests (Node) | `node backend/tests/js/*.test.js` | **7 files, all pass** (AtlasBench 25, Compare 16, Knowledge 34, Routing 14, link safety 4, API base 6, session persistence 5) |
 | Frontend syntax | `node --check frontend/js/*.js` | All files pass |
 | Python compile | `python -m compileall backend main.py start.py deploy` | Passes |
 | App boot | Start the real FastAPI app | `/ready` 200, `/health` `ok` with the embedding model loaded |
@@ -38,7 +38,7 @@ flowchart TB
     L1 --> L2 --> L3 --> L4
 ```
 
-Providers are never called for real: tests use scripted fake clients and, for the Compare client, a local fake provider server. That makes the suite fast, free and deterministic, and it is also the main limit of what it proves.
+The automated suites never call providers: they use scripted fake clients and, for the Compare client, a local fake provider server. That makes the suite fast, free and deterministic, and it is also the main limit of what it proves.
 
 ## What the suite covers
 
@@ -106,6 +106,14 @@ Read-only checks against https://atlas-cite-check.onrender.com after the small-h
 
 Defects found on the hosted instance, with causes and fixes, are listed in [Development history, phase 6](05-development-history.md#phase-6-first-live-deployment-2026-11-23-to-2026-11-25) and in the [QA report](project/05-qa-report.md).
 
+## Live checks of the AI Playground (local, 2026-11-26)
+
+| Check | Result |
+|---|---|
+| One-sentence request to GPT-OSS 120B, GPT-OSS 20B, Gemini 3.5 Flash-Lite and Gemini 3.1 Flash-Lite | All four answered |
+| The four models together in the browser, without evidence | All four completed; no console errors |
+| With web sources | Completed with citations |
+
 ## What the first full run found
 
 The first complete run of the suite, in a properly installed environment, reported **19 failures**. The earlier release reports had recorded these checks as "blocked" because dependencies could not be installed, so these failures had never been seen. I ran the same 19 against the untouched GitHub version: they fail there too, so they were already present and were not introduced by later changes.
@@ -127,7 +135,7 @@ A separate defect was also found in my own CI workflow: a plain `pytest` also co
 
 | Not verified | Why it matters |
 |---|---|
-| **Live provider calls** (Groq, Tavily, OpenAI, Anthropic, Gemini, xAI) | No keys were used. Request and response shapes were tested against fake servers, so a real provider may differ in a field. |
+| **Live calls to OpenAI, Anthropic and xAI** | Tested against fake servers only. Groq, Tavily and the two Gemini free-tier models were called for real in local checks on 2026-11-26. |
 | **Model quality** | No benchmark was run against real models, so there are no rankings or accuracy numbers |
 | **Python 3.11 and 3.12** | The README supports 3.11 and newer; only 3.13 was used |
 | **Load, concurrency at scale and long-running behaviour** | Only the atomic-reservation test exercises concurrency |

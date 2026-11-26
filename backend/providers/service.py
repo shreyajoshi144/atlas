@@ -8,6 +8,8 @@ measured (never ranked) summaries, idempotency, persistence, telemetry.
 """
 from __future__ import annotations
 
+import os
+
 import asyncio
 import hashlib
 import logging
@@ -160,12 +162,18 @@ class CompareService:
     # ───────────────────────── public: catalogue ─────────────────────────
     def models_payload(self) -> dict[str, Any]:
         s = self.s
+        # ATLAS_VISIBLE_MODELS (comma-separated catalog ids) limits what the page offers, e.g. to the
+        # free-tier models of a demo deployment. Unset shows the whole catalog.
+        visible = {m.strip() for m in os.environ.get("ATLAS_VISIBLE_MODELS", "").split(",") if m.strip()}
+        shown = [e for e in self.catalog.all() if not visible or e.id in visible]
+        shown_providers = [p for p in PROVIDERS if any(e.provider == p for e in shown)]
         providers = [{"id": p, "label": PROVIDER_LABELS[p], "configured": s.configured(p),
                       "circuit": self.client.breakers[p].state,
                       "key_hint": {"openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY",
-                                   "gemini": "GEMINI_API_KEY", "xai": "XAI_API_KEY"}[p]} for p in PROVIDERS]
+                                   "gemini": "GEMINI_API_KEY", "xai": "XAI_API_KEY", "groq": "GROQ_API_KEY"}[p]}
+                     for p in shown_providers]
         models = []
-        for e in self.catalog.all():
+        for e in shown:
             from .pricing import resolve_price
             price = resolve_price(e, 0)
             est = estimate_max_cost(e, 4000, s.default_max_output_tokens)
@@ -177,7 +185,7 @@ class CompareService:
                 "price_in_per_mtok": price["in"] if price else None, "price_out_per_mtok": price["out"] if price else None,
                 "price_note": e.price_note, "price_verified_on": e.verified_on, "source_url": e.source_url,
                 "context_window": e.context_window, "max_output_tokens": e.max_output_tokens,
-                "supports": {"native_search": True, "structured_output": "native" if e.provider in ("openai", "xai") else "prompted"},
+                "supports": {"native_search": e.native_search_supported, "structured_output": "native" if e.provider in ("openai", "xai") else "prompted"},
                 "est_max_cost_usd": round(est, 6) if est is not None else None,
             })
         return {"providers": providers, "models": models, "catalog_verified_on": self.catalog.verified_on,

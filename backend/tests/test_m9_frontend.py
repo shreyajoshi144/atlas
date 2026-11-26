@@ -32,7 +32,7 @@ def test_routing_ui_is_wired_into_atlasbench_and_loads_after_its_dependencies():
 
 def test_existing_atlasbench_and_knowledge_tabs_are_preserved():
     ab = read("js/atlasbench.js")
-    for tab in ("['runs', 'Runs']", "['compare', 'Compare']", "['tasks', 'Tasks']", "['configs', 'Configurations']"):
+    for tab in ("['runs', 'Runs']", "['tasks', 'Tasks']", "['configs', 'Configurations']"):
         assert tab in ab
     assert 'data-nav="atlasbench"' in read("app.html") and 'data-nav="knowledge"' in read("app.html")
 
@@ -117,36 +117,8 @@ console.log('rendered', out.length, 'fragments');
     assert "rendered" in done.stdout
 
 
-def test_playground_batch1_has_light_surface_accessible_controls_and_responsive_layout():
-    css = read("css/atlas.css")
-    js = read("js/playground.js")
-    assert ".pg-history, .pg-workspace { background: var(--ivory); color: var(--ink);" in css
-    assert ".pg-composer-footer { align-items: stretch; flex-direction: column; }" in css
-    assert "focus-visible" in css and "prefers-reduced-motion" in css
-    assert "data-pg-model" in js and "Run comparison" in js
-    assert "role=\"status\"" in js and "rel=\"noopener noreferrer\"" in js
-
-
 def test_knowledge_rows_support_keyboard_activation():
     js = read("js/knowledge.js")
     assert "root().addEventListener('keydown', onKeyboardActivate)" in js
     assert "function onKeyboardActivate(ev)" in js
     assert "ev.key !== 'Enter' && ev.key !== ' '" in js
-
-
-@pytest.mark.skipif(NODE is None, reason="node is not installed")
-def test_playground_render_keeps_success_when_another_model_fails():
-    js = read("js/playground.js")
-    # Exercise the real output renderer in Node without a browser or fake provider response.
-    runner = f"""
-global.window = {{}}; global.escapeHtml = s => String(s); global.mdToHtml = s => String(s);
-require({json.dumps(str(FRONTEND / 'js' / 'playground.js'))}); const P = window.AtlasPlayground;
-const html = P.outputHtml({{model:'model-a', label:'Model A', status:'ok', answer:'Real answer', usage:{{}}}}) +
-  P.outputHtml({{model:'model-b', label:'Model B', status:'failed', error:'Provider unavailable', usage:{{}}}});
-if (!html.includes('Real answer') || !html.includes('Provider failed') || !html.includes('Provider unavailable')) process.exit(1);
-if (!html.includes('Complete')) process.exit(1);
-console.log('playground partial-success render passed');
-"""
-    done = subprocess.run([NODE, "-e", runner], capture_output=True, text=True, timeout=20)
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert "passed" in done.stdout

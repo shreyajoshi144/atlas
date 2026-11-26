@@ -326,7 +326,7 @@ def test_list_runs_filters_and_paginates(bs, alice):
 
 # ── comparison ───────────────────────────────────────────────────────────────
 def test_comparing_models_on_identical_evidence_ranks_them_and_shows_the_cost_of_being_wrong(repository, alice):
-    s = BenchService(repository, llm_factory=by_model({"llama-3.3-70b-versatile": "perfect", "llama-3.1-8b-instant": "fabricating"}), clock=lambda: NOW)
+    s = BenchService(repository, llm_factory=by_model({"openai/gpt-oss-120b": "perfect", "openai/gpt-oss-20b": "fabricating"}), clock=lambda: NOW)
     big, small = finished(s, alice, BASE), finished(s, alice, SMALL)
     r = s.compare(alice, [big["run_id"], small["run_id"]])
     assert r["comparable"] and len(r["common_tasks"]) == 8 and r["warnings"] == [] and not r["identical_setup"]

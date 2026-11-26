@@ -14,7 +14,7 @@ Atlas has two halves that share one platform.
 |---|---|---|
 | **Question it answers** | "What does the evidence say, and how sure should I be?" | "Which model should answer, and can I prove it?" |
 | **Core idea** | Every claim stays linked to its source and is labelled *supporting*, *uncertain* or *conflicting* | Models are ranked only on measured results from frozen tasks, never on opinion |
-| **Main features** | Research pipeline, source ranking, claim verification, Knowledge Map, Challenge mode, grounded chat | Compare (4 providers), Playground, AtlasBench, Cost Autopilot routing (a tab inside AtlasBench), budgets |
+| **Main features** | Research pipeline, source ranking, claim verification, Knowledge Map, Challenge mode, grounded chat | AI Playground (5 providers supported), AtlasBench, Cost Autopilot routing (a tab inside AtlasBench), budgets |
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,7 @@ flowchart LR
     B[AtlasBench<br/>frozen tasks] --> E[Measured model quality]
     E --> P[Cost Autopilot<br/>routing policy]
     P --> R
-    CMP[Compare<br/>OpenAI · Anthropic · Gemini · xAI] --> E
+    CMP[AI Playground<br/>Groq · Gemini · OpenAI · Anthropic · xAI] --> E
 ```
 
 The two halves meet at the routing layer. Quality scores from AtlasBench decide which model the research pipeline uses, so the measurement and the product are connected.
@@ -57,7 +57,7 @@ The two halves meet at the routing layer. Quality scores from AtlasBench decide 
 
 **Challenge mode.** Runs deterministic adversarial queries against a finding: counter-evidence, contradiction search, source quality, temporal validity, assumption check and alternative explanation. A finding ends up *supported*, *weakened*, *contradicted*, *unresolved*, *stale* or *source concern*.
 
-**Compare.** One question goes to up to four providers. Each answer shows citations, tokens, estimated cost, latency, every retry and any failure. The results page reports a ranking only when confidence intervals don't overlap.
+**AI Playground.** One question goes to up to four models, optionally with the same web sources. A table compares time, tokens, estimated cost and sources cited, and each model's full answer opens on its own. Five providers are supported; the demo offers free-tier Groq and Gemini models. A ranking is claimed only from the labelled evaluation suite, and only when confidence intervals do not overlap.
 
 **AtlasBench.** Eight hand-written tasks over frozen, fictional evidence (so models can't answer from memory): clean support, contradiction, abstention, stale sources, prompt injection, multi-hop, numeric nuance and no evidence. Six measures are scored deterministically.
 

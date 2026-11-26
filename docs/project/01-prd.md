@@ -45,19 +45,19 @@ Priority uses MoSCoW. Verification names the automated tests that cover the requ
 | FR-02 | Every claim has a verification status and stays linked to its evidence | Must | `test_verification_agent`, `test_milestone1_e2e` | Done |
 | FR-03 | Source ranking scores relevance separately from credibility | Must | `test_research_depth`, `test_publication_dates` | Done |
 | FR-04 | Plans run only over a closed registry of 5 tools, with bounded re-planning, and fall back to the fixed pipeline if planning fails | Must | `test_research_planner`, `test_agentic_execution`, `test_agentic_integration`, `test_tool_registry`, `test_tool_registry_real_services` | Done |
-| FR-05 | Saved research can be searched by keyword and meaning (BM25, dense, rank fusion, reranking, metadata filters) | Should | `test_m5_hybrid_retrieval`, `test_embedding_dependency` | Done (3 related tests skipped: missing fixture, B-11) |
+| FR-05 | Saved research is retrieved by keyword and meaning (BM25, dense, rank fusion, reranking, metadata filters) for grounded chat and the search API | Should | `test_m5_hybrid_retrieval`, `test_embedding_dependency` | Done (3 related tests skipped: missing fixture, B-11) |
 | FR-06 | A per-user Knowledge Map records entities and claims with change tracking and freshness | Should | `test_m5_knowledge`, `test_m6_knowledge_map`, `test_m6_changes`, `test_m6_freshness`, `test_m6_api` | Done |
 | FR-07 | Challenge mode runs six types of adversarial query with six result states | Should | `test_m7_challenges`, `test_m7_api` | Done |
 | FR-08 | Notes, open questions and grounded chat attach to saved research | Should | `test_notes_and_questions` | Done |
-| FR-09 | Users can browse Cases, Library, Discover and Insights | Should | `test_api_security`, browser e2e | Done |
-| FR-10 | The AI Playground sends one question to up to three allowlisted models and shows answers, usage and cost | Should | `test_playground`, `backend/tests/js/playground_ui.test.js` | Done |
-| FR-11 | Compare sends one question and the same evidence to up to four providers and records answer, citations, tokens, cost, latency, retries and failures | Should | provider suite (121 tests) | Done (never run against live providers) |
-| FR-12 | AtlasBench runs 8 frozen tasks, scores 6 measures deterministically, supports reproducible and resumable runs, run comparison and arbitration | Must | `test_m8_core`, `test_m8_runner`, `test_m8_service`, `test_m8_api`, `test_m8_recovery_policy`, `test_m10_m11` | Done |
+| FR-09 | Users can browse Cases, Library and Insights | Should | `test_api_security`, browser e2e | Done |
+| FR-10 | The AI Playground sends one question to up to four models, optionally with the same web sources, and shows each answer with citations, tokens, estimated cost and latency | Should | provider suite, `backend/tests/js/compare_ui.test.js`, `test_playground` | Done (Groq and Gemini checked live) |
+| FR-11 | Results compare models in one table, and one model's full answer is shown at a time | Should | `backend/tests/js/compare_ui.test.js`, browser check | Done |
+| FR-12 | AtlasBench runs 8 frozen tasks, scores 6 measures deterministically, supports reproducible and resumable runs, run comparison and arbitration (comparison and arbitration through the API) | Must | `test_m8_core`, `test_m8_runner`, `test_m8_service`, `test_m8_api`, `test_m8_recovery_policy`, `test_m10_m11` | Done |
 | FR-13 | Routing supports explicit, autopilot and fallback policies, managed on the Routing & cost tab of AtlasBench | Should | `test_m9_selector`, `test_m9_router`, `test_m9_service_api` | Done |
 | FR-14 | Budgets: per-user daily call limit, per-user monthly spend cap, app-wide cap, all reserved before the call | Must | `test_batch3_runtime_controls`, `test_batch3_completion_controls`, `test_global_spend_cap` | Done |
 | FR-15 | Accounts: register, sign in, signed expiring tokens, per-user data isolation | Must | `test_auth_security`, `test_authorization_isolation`, `test_api_security` | Done |
 | FR-16 | Admin routes provide metrics, monitoring, audit log and limit controls | Could | `test_metrics`, `test_milestone3_observability_safety` | Done |
-| FR-17 | Compare, the Playground and AtlasBench each explain how they work on the page | Should | `backend/tests/js/*` (UI modules); content added 2026-11-25 | Done |
+| FR-17 | The AI Playground and AtlasBench explain how they work on the page | Should | `backend/tests/js/*` (UI modules) | Done |
 
 ## 5. Non-functional requirements
 
@@ -82,7 +82,7 @@ A release is acceptable when all of these hold.
 3. A new user can register, sign in, run one research case and find it in the Library.
 4. A second user cannot read the first user's data.
 5. A run that would exceed a spend limit is refused before any provider is called.
-6. The documentation, landing page and application menu describe the same five areas.
+6. The documentation, landing page and application menu describe the same four areas.
 
 Criteria 1, 2, 4, 5 and 6 were checked for 2.1.1. Criterion 3 was checked locally; the hosted check is open (B-01).
 
@@ -96,6 +96,6 @@ Document upload, horizontal scaling, email delivery, token revocation, voice, a 
 |---|---|
 | Single instance, SQLite and local Chroma | Not for horizontal scaling. Rate limits and metrics are per process. |
 | Free hosting wipes the disk on restart | Accounts and reports on the demo are temporary; a demo account is re-created at start |
-| Small-host mode on the demo | Source ranking is less semantic; new reports are not vector-indexed, so Ask Atlas and Discover do not find them |
+| Small-host mode on the demo | Source ranking is less semantic; new reports are not vector-indexed, so Ask Atlas reads only the open case or the three newest reports |
 | Costs are estimates | Catalog list prices and token counts, not invoices |
 | No live-provider results | The evaluation harness is tested against fake providers only |

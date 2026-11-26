@@ -257,5 +257,5 @@ One process serves both the API and the UI, so there is a single origin and no C
 | Router behind `get_chat_llm` | Agents and the graph don't change when routing does | Context has to be carried explicitly into thread-pool calls |
 | Hand-rolled signed tokens | No extra dependency, simple to audit | No revocation list. A standard JWT library would be the next step. |
 | In-memory rate limiter | No Redis dependency | Per process, resets on restart |
-| Small-host mode (ONNX embeddings, keyword ranking, at most 6 sources, no vector indexing) | The live demo runs on a free 512 MB instance; the full path peaked at about 870 MB | Lower semantic ranking quality on the demo, and Ask Atlas and Discover do not see new reports there. The full path stays the default everywhere else. |
+| Small-host mode (ONNX embeddings, keyword ranking, at most 6 sources, no vector indexing) | The live demo runs on a free 512 MB instance; the full path peaked at about 870 MB | Lower semantic ranking quality on the demo, and Ask Atlas reads only the open or three newest reports there. The full path stays the default everywhere else. |
 | Static frontend without a framework | No build step, one container | Large hand-written `script.js` (about 2,100 lines) that would benefit from modules |

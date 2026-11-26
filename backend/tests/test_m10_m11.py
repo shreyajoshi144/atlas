@@ -583,7 +583,7 @@ def admin_app(repository, monkeypatch):
         conn.execute("UPDATE users SET role='admin' WHERE user_id=?", (users["admin"],))
         conn.commit()
     monkeypatch.setattr("backend.api.routes.atlasbench._service", lambda: BenchService(
-        ResearchRepository(), llm_factory=by_model({"llama-3.3-70b-versatile": "perfect", "llama-3.1-8b-instant": "fabricating"}), clock=lambda: NOW))
+        ResearchRepository(), llm_factory=by_model({"openai/gpt-oss-120b": "perfect", "openai/gpt-oss-20b": "fabricating"}), clock=lambda: NOW))
     headers = {k: {"Authorization": f"Bearer {create_access_token(v, f'{k}@example.test')}"} for k, v in users.items()}
     with TestClient(main_module.app) as client:
         yield {"client": client, "headers": headers, "users": users, "repo": repository}

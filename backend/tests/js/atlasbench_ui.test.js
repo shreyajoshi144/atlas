@@ -42,11 +42,11 @@ const run = (o) => Object.assign({ run_id: 'run_' + 'a'.repeat(32), label: 'Base
   cases: [{ task_id: 'core-clean-support', title: 'Clean support', status: 'completed', composite: 0.9, flags: [], latency_ms: 800, error_type: null }] }, o);
 
 // ── runs ─────────────────────────────────────────────────────────────────────
-t('run row shows status, score, config and offers comparison only for completed runs', () => {
+t('run row shows status, score, config and offers no side-by-side checkbox', () => {
   const h = A.runRow(run());
-  assert(h.includes('Completed') && h.includes('0.82') && h.includes('llama-3.3-70b-versatile') && h.includes('8/8 tasks') && h.includes('data-act="pick"'));
+  assert(h.includes('Completed') && h.includes('0.82') && h.includes('llama-3.3-70b-versatile') && h.includes('8/8 tasks'));
   assert(!A.runRow(run({ status: 'pending', summary: null })).includes('data-act="pick"'));
-  assert(A.runRow(run(), true).includes('checked')); assert(A.runRow(run({ reproduces_run_id: 'run_x' })).includes('Reproduction'));
+  assert(A.runRow(run({ reproduces_run_id: 'run_x' })).includes('Reproduction'));
 });
 t('run detail shows all six measures, speed/tokens/cost and the tasks', () => {
   const h = A.runDetailHtml(run());

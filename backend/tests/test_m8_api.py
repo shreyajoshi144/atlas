@@ -38,7 +38,7 @@ def app(repository, monkeypatch):
     from backend.database import ResearchRepository
     from fastapi.testclient import TestClient
 
-    state = {"factory": by_model({"llama-3.3-70b-versatile": "perfect", "llama-3.1-8b-instant": "fabricating"})}
+    state = {"factory": by_model({"openai/gpt-oss-120b": "perfect", "openai/gpt-oss-20b": "fabricating", "llama-3.1-8b-instant": "fabricating"})}
     monkeypatch.setattr(route, "_service", lambda: BenchService(ResearchRepository(), llm_factory=lambda c: state["factory"](c), clock=lambda: NOW))
     login = lambda uid, name: {"Authorization": f"Bearer {create_access_token(uid, f'{name.lower()}@example.com')}"}  # noqa: E731
     ua, ub = make_user(repository, "Alice"), make_user(repository, "Bob")

@@ -20,16 +20,21 @@ Each entry records what was decided, what else was considered, why, and what it 
 | D-08 | Retry only HTTP 429; fall back to another model only on provider trouble (Sprint 4, M9) | Retry or fall back on any error | A 413 or a validation error is not fixed by retrying or switching models | Bugs surface instead of being hidden |
 | D-09 | Serve the API and frontend from one origin in one container (v2.0) | Separate frontend host | No CORS in the deployed path; one thing to deploy | One process owns both |
 | D-10 | Deploy the live demo on **Render's free tier** (2026-11-23) | Hugging Face Docker Space | Docker Spaces need a paid plan; Render builds the existing Dockerfile for free | Free instance: 512 MB, sleeps when idle, disk wiped at restart |
-| D-11 | Add **small-host mode** to the Docker image: ONNX embeddings, keyword-only ranking, at most 6 sources, no vector indexing or executive brief (2026-11-25) | Pay for a bigger instance; shrink the product | Research needed about 870 MB and the free instance has 512 MB, so it crashed | Less semantic ranking; Ask Atlas and Discover do not find new reports on the demo; unset the variables on a larger host |
+| D-11 | Add **small-host mode** to the Docker image: ONNX embeddings, keyword-only ranking, at most 6 sources, no vector indexing or executive brief (2026-11-25) | Pay for a bigger instance; shrink the product | Research needed about 870 MB and the free instance has 512 MB, so it crashed | Less semantic ranking; Ask Atlas reads only the open case or the three newest reports on the demo; unset the variables on a larger host |
 | D-12 | **Cut: remove Workflow Studio** (2026-11-25) | Keep it hidden | It supported none of the objectives and was hard to explain; every page has to be demonstrable and explainable | The `/api/workflows` routes (10 operations), module, tables, page, tests and all mentions were deleted; the API has 89 operations |
 | D-13 | **Cut: fold Runtime & Control into AtlasBench** as the Routing & cost tab (2026-11-25) | Keep a separate area | Same backend as AtlasBench; one place is easier to understand | The menu has five areas, not seven |
 | D-14 | Turn API documentation off in production unless `ENABLE_API_DOCS=true` (2026-11-25) | Leave it public | A public route list is free reconnaissance and not needed by visitors | Operators must opt in |
 | D-15 | Re-create a demo account at every start from `DEMO_EMAIL` and `DEMO_PASSWORD` (v2.0; relied on from 2026-11-25) | Persistent disk (paid) | Gives reviewers a login that survives restarts | One shared account; other accounts are temporary |
 | D-16 | Replace 16 batch and sprint reports with a numbered documentation set (v2.1.0) | Keep them | The reports contradicted each other and went stale | One set to maintain; this pack adds the management view |
 | D-17 | Refuse to start in production without a strong secret, explicit CORS origins and a spend cap (v2.0) | Warn only | Unsafe defaults should fail loudly | A misconfigured deploy does not start |
+| D-19 | **Cut: remove the Discover page** (2026-11-26) | Fix it by turning indexing back on | It returned nothing on the live demo (small-host mode skips indexing), and Cases and Library already let a user find reports | The page, its tab, the search shortcut and the "search by meaning" links are gone; the search API `POST /api/search/semantic` remains |
+| D-20 | **Cut: remove the Compare tab inside AtlasBench** (2026-11-26) | Keep it with more explanation | It was one more thing to explain and duplicated the idea of the Compare page | Run comparison and arbitration are API-only |
+| D-18 | **Add Groq as a provider and use free-tier models** (2026-11-26) | Remove Compare; buy API credit | Gemini and Groq have free tiers, so the demo can compare real models at no cost | OpenAI, Anthropic and xAI stay supported but hidden on the demo (`ATLAS_VISIBLE_MODELS`) |
+| D-21 | **Merge Compare and the AI Playground into one page** (2026-11-26) | Keep two similar pages | They asked the same thing in two ways, which was confusing | One page; the older Playground page was removed and its API routes remain |
+| D-22 | Show results as a table plus one full answer at a time (2026-11-26) | Side-by-side cards | Answers differ widely in length and number of sources, so columns were unreadable | Reading two answers means switching between them |
 
 ## Open decisions
 
 | ID | Question | Options | Needed by |
 |---|---|---|---|
-| D-18 | Should Compare run on the demo by adding Groq as a provider? | Add Groq (B-03); leave Compare as built and say it needs keys | Before the next release |
+| None | | | |
